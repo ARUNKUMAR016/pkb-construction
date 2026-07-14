@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PKB Kalai Construction | Building Better Homes For Better Tomorrow</title>
+  <meta name="description" content="PKB Kalai Construction — Premium civil construction by K. Prasath B.E Civil. Residential, commercial & industrial projects across Tamil Nadu." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,300;0,400;0,600;0,700;0,800;0,900;1,600;1,700;1,900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════
+       ADMIN BAR
+  ════════════════════════════════════════ -->
+  <div class="admin-bar" id="adminBar">
+    <div class="ab-inner">
+      <span class="ab-status">
+        <span class="ab-dot"></span>
+        Admin Mode &mdash; <strong>K. Prasath</strong>
+      </span>
+      <div class="ab-actions">
+        <button class="ab-btn" id="addProjectBtn">+ Add Project</button>
+        <button class="ab-btn ab-out" id="adminLogout">Sign Out</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       NAVBAR
+  ════════════════════════════════════════ -->
+  <nav class="navbar" id="navbar">
+    <div class="nav-inner">
+      <a href="#home" class="nav-logo-link">
+        <img src="logo.png" alt="PKB Kalai Construction" class="logo-img" />
+      </a>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="#home"     class="nav-link active">Home</a></li>
+        <li><a href="#about"    class="nav-link">About</a></li>
+        <li><a href="#sectors"  class="nav-link">Sectors</a></li>
+        <li><a href="#services" class="nav-link">Services</a></li>
+        <li><a href="#projects" class="nav-link">Projects</a></li>
+        <li><a href="#contact"  class="nav-link">Contact</a></li>
+      </ul>
+      <div class="nav-right">
+        <button class="admin-trigger" id="adminTrigger" title="Admin">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 10-16 0"/></svg>
+        </button>
+        <button class="hamburger" id="hamburger" aria-label="Menu">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ═══════════════════════════════════════
+       HERO — CINEMATIC SLIDESHOW
+  ════════════════════════════════════════ -->
+  <section class="hero-cinema" id="home">
+    <!-- Slide Backgrounds -->
+    <div class="hc-slides" id="hcSlides">
+      <div class="hc-slide active" style="background-image:url('hero1.png')">
+        <div class="hc-overlay"></div>
+      </div>
+      <div class="hc-slide" style="background-image:url('hero2.png')">
+        <div class="hc-overlay"></div>
+      </div>
+      <div class="hc-slide" style="background-image:url('hero3.png')">
+        <div class="hc-overlay"></div>
+      </div>
+    </div>
+
+    <!-- Content -->
+    <div class="hc-content">
+      <div class="hc-panels" id="hcPanels">
+
+        <!-- Panel 1 -->
+        <div class="hc-panel active" id="hcPanel0">
+          <p class="hc-eyebrow"><span class="hc-eye-line"></span>Residential Excellence</p>
+          <h1 class="hc-headline">
+            <span class="hch-line">Building</span>
+            <span class="hch-line hch-italic">Better</span>
+            <span class="hch-line">Homes.</span>
+          </h1>
+          <p class="hc-sub">Precision-crafted residences built to last generations — led by <strong>K. Prasath, B.E Civil</strong>.</p>
+          <div class="hc-btns">
+            <a href="#projects" class="btn-solid">View Our Work</a>
+            <a href="#contact" class="btn-ghost">Start a Project &rarr;</a>
+          </div>
+        </div>
+
+        <!-- Panel 2 -->
+        <div class="hc-panel" id="hcPanel1">
+          <p class="hc-eyebrow"><span class="hc-eye-line"></span>Dream Homes Delivered</p>
+          <h1 class="hc-headline">
+            <span class="hch-line">Your</span>
+            <span class="hch-line hch-italic">Vision,</span>
+            <span class="hch-line">Built.</span>
+          </h1>
+          <p class="hc-sub">Custom villas, apartments & bungalows — trusted by <strong>200+ families</strong> across Tamil Nadu.</p>
+          <div class="hc-btns">
+            <a href="#services" class="btn-solid">Our Services</a>
+            <a href="#contact" class="btn-ghost">Get Free Quote &rarr;</a>
+          </div>
+        </div>
+
+        <!-- Panel 3 -->
+        <div class="hc-panel" id="hcPanel2">
+          <p class="hc-eyebrow"><span class="hc-eye-line"></span>Commercial &amp; Civil Works</p>
+          <h1 class="hc-headline">
+            <span class="hch-line">Built</span>
+            <span class="hch-line hch-italic">Different.</span>
+            <span class="hch-line">Built Better.</span>
+          </h1>
+          <p class="hc-sub">Office buildings, showrooms, and civil infrastructure — engineered to impress and built to last.</p>
+          <div class="hc-btns">
+            <a href="#projects" class="btn-solid">See Projects</a>
+            <a href="#contact" class="btn-ghost">Contact Us &rarr;</a>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Slide Indicators -->
+      <div class="hc-dots" id="hcDots">
+        <button class="hc-dot active" data-slide="0" aria-label="Slide 1"></button>
+        <button class="hc-dot" data-slide="1" aria-label="Slide 2"></button>
+        <button class="hc-dot" data-slide="2" aria-label="Slide 3"></button>
+      </div>
+
+      <!-- Scroll indicator -->
+      <div class="hc-scroll-hint">
+        <span class="hc-scroll-line"></span>
+        <span class="hc-scroll-text">Scroll</span>
+      </div>
+    </div>
+
+    <!-- Bottom stats bar -->
+    <div class="hc-stats-bar">
+      <div class="hcsb-item">
+        <span class="hcsb-num" data-target="150">0</span><span class="hcsb-plus">+</span>
+        <span class="hcsb-label">Projects Done</span>
+      </div>
+      <div class="hcsb-sep"></div>
+      <div class="hcsb-item">
+        <span class="hcsb-num" data-target="10">0</span><span class="hcsb-plus">+</span>
+        <span class="hcsb-label">Years Experience</span>
+      </div>
+      <div class="hcsb-sep"></div>
+      <div class="hcsb-item">
+        <span class="hcsb-num" data-target="200">0</span><span class="hcsb-plus">+</span>
+        <span class="hcsb-label">Happy Families</span>
+      </div>
+      <div class="hcsb-sep"></div>
+      <div class="hcsb-item">
+        <span class="hcsb-num" data-target="100">0</span><span class="hcsb-plus">%</span>
+        <span class="hcsb-label">Client Satisfaction</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════
+       MARQUEE STRIP
+  ════════════════════════════════════════ -->
+  <div class="marquee-strip">
+    <div class="marquee-track">
+      <span>Residential Construction</span><span class="mq-dot">◆</span>
+      <span>Commercial Builds</span><span class="mq-dot">◆</span>
+      <span>Civil Engineering</span><span class="mq-dot">◆</span>
+      <span>Renovation Works</span><span class="mq-dot">◆</span>
+      <span>Interior Fit-Out</span><span class="mq-dot">◆</span>
+      <span>Industrial Projects</span><span class="mq-dot">◆</span>
+      <span>Residential Construction</span><span class="mq-dot">◆</span>
+      <span>Commercial Builds</span><span class="mq-dot">◆</span>
+      <span>Civil Engineering</span><span class="mq-dot">◆</span>
+      <span>Renovation Works</span><span class="mq-dot">◆</span>
+      <span>Interior Fit-Out</span><span class="mq-dot">◆</span>
+      <span>Industrial Projects</span><span class="mq-dot">◆</span>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       ABOUT
+  ════════════════════════════════════════ -->
+  <section class="about" id="about">
+    <div class="container">
+
+      <div class="about-grid">
+        <div class="about-left">
+          <p class="section-label">Who We Are</p>
+          <h2 class="about-headline">
+            Building <em>Your Dreams</em><br/>With Precision<br/>&amp; Purpose.
+          </h2>
+          <div class="about-divider"></div>
+          <p class="about-body">
+            PKB Kalai Construction is a trusted civil engineering firm based in Tamil Nadu. 
+            Founded and led by <strong>K. Prasath B.E Civil</strong>, we bring over a decade 
+            of hands-on expertise to every project — from bespoke residences to large-scale 
+            commercial developments.
+          </p>
+          <p class="about-body">
+            We believe great construction starts with great communication. Every project 
+            is managed with complete transparency, strict timelines, and an uncompromising 
+            commitment to quality.
+          </p>
+          <div class="about-credentials">
+            <div class="ac-item">
+              <span class="ac-icon">✔</span>
+              <div>
+                <strong>Licensed Civil Engineer</strong>
+                <p>B.E Civil — Fully certified &amp; registered</p>
+              </div>
+            </div>
+            <div class="ac-item">
+              <span class="ac-icon">✔</span>
+              <div>
+                <strong>On-Time Delivery</strong>
+                <p>Strict timelines, zero delays policy</p>
+              </div>
+            </div>
+            <div class="ac-item">
+              <span class="ac-icon">✔</span>
+              <div>
+                <strong>Transparent Pricing</strong>
+                <p>Honest quotes, no hidden costs</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="about-right">
+          <div class="about-profile-card">
+            <div class="apc-img-wrap">
+              <img src="logo.png" alt="PKB Kalai Construction" class="apc-logo" />
+            </div>
+            <div class="apc-body">
+              <div class="apc-name">K. PRASATH</div>
+              <div class="apc-role">B.E Civil Engineer</div>
+              <div class="apc-company">PKB Kalai Construction</div>
+              <blockquote class="apc-quote">
+                "We don't just pour concrete — we build futures that last generations."
+              </blockquote>
+            </div>
+            <div class="apc-badge">
+              <span class="ab-year">10+</span>
+              <span class="ab-ytext">Years of Excellence</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════
+       SECTORS SHOWCASE — PCL-Style Tabs
+  ════════════════════════════════════════ -->
+  <section class="sectors" id="sectors">
+    <div class="sectors-header">
+      <p class="section-label">What We Build</p>
+      <h2 class="sectors-headline">We Have a <em>Vision</em><br/>For Every Project.</h2>
+    </div>
+    <!-- Tabs -->
+    <div class="sectors-tabs" id="sectorsTabs">
+      <button class="st-btn active" data-sector="0">Residential</button>
+      <button class="st-btn" data-sector="1">Commercial</button>
+      <button class="st-btn" data-sector="2">Renovation</button>
+      <button class="st-btn" data-sector="3">Civil Works</button>
+    </div>
+    <!-- Panels -->
+    <div class="sectors-panels">
+
+      <div class="sp-panel active" id="sp0">
+        <div class="sp-img-side">
+          <div class="sp-img-bg" style="background-image:url('hero2.png')"></div>
+        </div>
+        <div class="sp-text-side">
+          <p class="sp-eyebrow">Sector · Residential</p>
+          <h3 class="sp-title">Stunning Homes,<br/>Sustainably Built.</h3>
+          <p class="sp-desc">We rise to the challenges of diverse residential requirements — custom villas, independent houses, G+2 buildings, and luxury apartments. From foundation to finishing, we deliver with precision and care for every family we serve.</p>
+          <div class="sp-points">
+            <div class="spp-item"><span class="spp-dot"></span>Custom Villas &amp; Bungalows</div>
+            <div class="spp-item"><span class="spp-dot"></span>G+1 to G+4 Buildings</div>
+            <div class="spp-item"><span class="spp-dot"></span>Apartment Complexes</div>
+          </div>
+          <a href="#contact" class="sp-cta">Enquire Now <span>→</span></a>
+        </div>
+      </div>
+
+      <div class="sp-panel" id="sp1">
+        <div class="sp-img-side">
+          <div class="sp-img-bg" style="background-image:url('hero3.png')"></div>
+        </div>
+        <div class="sp-text-side">
+          <p class="sp-eyebrow">Sector · Commercial</p>
+          <h3 class="sp-title">Spaces That<br/>Inspire Business.</h3>
+          <p class="sp-desc">Our commercial construction teams bring the expertise, competitive pricing, and commitment needed for your office buildings, showrooms, retail spaces and mixed-use developments — engineered to impress and built to perform.</p>
+          <div class="sp-points">
+            <div class="spp-item"><span class="spp-dot"></span>Office Buildings &amp; Complexes</div>
+            <div class="spp-item"><span class="spp-dot"></span>Showrooms &amp; Retail Spaces</div>
+            <div class="spp-item"><span class="spp-dot"></span>Warehouses &amp; Industrial Units</div>
+          </div>
+          <a href="#contact" class="sp-cta">Enquire Now <span>→</span></a>
+        </div>
+      </div>
+
+      <div class="sp-panel" id="sp2">
+        <div class="sp-img-side">
+          <div class="sp-img-bg" style="background-image:url('hero1.png')"></div>
+        </div>
+        <div class="sp-text-side">
+          <p class="sp-eyebrow">Sector · Renovation</p>
+          <h3 class="sp-title">Transform &amp;<br/>Revitalize Spaces.</h3>
+          <p class="sp-desc">Breathing new life into existing structures with modern design and expert craftsmanship. From interior overhauls and extensions to full structural renovations — we handle every complexity with professional precision.</p>
+          <div class="sp-points">
+            <div class="spp-item"><span class="spp-dot"></span>Full Building Renovations</div>
+            <div class="spp-item"><span class="spp-dot"></span>Interior Remodeling</div>
+            <div class="spp-item"><span class="spp-dot"></span>Structural Extensions</div>
+          </div>
+          <a href="#contact" class="sp-cta">Enquire Now <span>→</span></a>
+        </div>
+      </div>
+
+      <div class="sp-panel" id="sp3">
+        <div class="sp-img-side">
+          <div class="sp-img-bg" style="background-image:url('hero1.png')" style="filter:hue-rotate(20deg)"></div>
+        </div>
+        <div class="sp-text-side">
+          <p class="sp-eyebrow">Sector · Civil Engineering</p>
+          <h3 class="sp-title">Engineering the<br/>Infrastructure of Tomorrow.</h3>
+          <p class="sp-desc">Foundation work, piling, structural engineering, drainage, road construction — our civil engineering division handles the full spectrum of infrastructure projects, backed by 10+ years of hands-on field expertise.</p>
+          <div class="sp-points">
+            <div class="spp-item"><span class="spp-dot"></span>Foundation &amp; Piling Works</div>
+            <div class="spp-item"><span class="spp-dot"></span>Road &amp; Drainage Infrastructure</div>
+            <div class="spp-item"><span class="spp-dot"></span>Retaining Walls &amp; Structures</div>
+          </div>
+          <a href="#contact" class="sp-cta">Enquire Now <span>→</span></a>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════
+       SERVICES
+  ════════════════════════════════════════ -->
+  <section class="services" id="services">
+    <div class="container">
+      <div class="svc-header">
+        <p class="section-label">What We Do</p>
+        <h2 class="svc-headline">Our <em>Services</em></h2>
+      </div>
+
+      <div class="svc-list">
+
+        <div class="svc-row">
+          <span class="svc-num">01</span>
+          <div class="svc-content">
+            <h3>Residential Construction</h3>
+            <p>Custom homes, villas, and apartments built to your exact specifications.</p>
+            <div class="svc-tags">
+              <span>Custom Homes</span><span>Villas</span><span>Apartments</span>
+            </div>
+          </div>
+          <a href="#contact" class="svc-arrow" aria-label="Enquire">→</a>
+        </div>
+
+        <div class="svc-row">
+          <span class="svc-num">02</span>
+          <div class="svc-content">
+            <h3>Commercial Construction</h3>
+            <p>Office buildings, showrooms, and retail spaces engineered to impress.</p>
+            <div class="svc-tags">
+              <span>Office Blocks</span><span>Showrooms</span><span>Retail</span>
+            </div>
+          </div>
+          <a href="#contact" class="svc-arrow" aria-label="Enquire">→</a>
+        </div>
+
+        <div class="svc-row">
+          <span class="svc-num">03</span>
+          <div class="svc-content">
+            <h3>Renovation &amp; Remodeling</h3>
+            <p>Transforming old structures with modern design and expert craftsmanship.</p>
+            <div class="svc-tags">
+              <span>Interior Renovation</span><span>Extensions</span><span>Structural</span>
+            </div>
+          </div>
+          <a href="#contact" class="svc-arrow" aria-label="Enquire">→</a>
+        </div>
+
+        <div class="svc-row">
+          <span class="svc-num">04</span>
+          <div class="svc-content">
+            <h3>Interior Design &amp; Fit-Out</h3>
+            <p>Complete interior solutions — modular kitchens, ceilings, flooring, and more.</p>
+            <div class="svc-tags">
+              <span>Modular Kitchen</span><span>False Ceiling</span><span>Flooring</span>
+            </div>
+          </div>
+          <a href="#contact" class="svc-arrow" aria-label="Enquire">→</a>
+        </div>
+
+        <div class="svc-row">
+          <span class="svc-num">05</span>
+          <div class="svc-content">
+            <h3>Civil Engineering Works</h3>
+            <p>Foundation, piling, structural works, road and drainage infrastructure.</p>
+            <div class="svc-tags">
+              <span>Foundation</span><span>Structural</span><span>Drainage</span>
+            </div>
+          </div>
+          <a href="#contact" class="svc-arrow" aria-label="Enquire">→</a>
+        </div>
+
+        <div class="svc-row">
+          <span class="svc-num">06</span>
+          <div class="svc-content">
+            <h3>Project Consultation</h3>
+            <p>Expert planning, cost estimation, permit assistance and project oversight.</p>
+            <div class="svc-tags">
+              <span>Planning</span><span>Estimates</span><span>Permits</span>
+            </div>
+          </div>
+          <a href="#contact" class="svc-arrow" aria-label="Enquire">→</a>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════
+       WHY US — DARK STRIP
+  ════════════════════════════════════════ -->
+  <section class="why-strip">
+    <div class="container">
+      <div class="why-grid">
+        <div class="why-left">
+          <p class="section-label light">Why PKB Kalai</p>
+          <h2 class="why-headline">
+            Built Different.<br/><em>Built Better.</em>
+          </h2>
+          <p class="why-body">
+            10+ years of building across Tamil Nadu has given us something no competitor
+            can copy — the trust of 200+ satisfied families and businesses who chose
+            quality over compromise.
+          </p>
+          <a href="#contact" class="btn-solid">Start a Project</a>
+        </div>
+        <div class="why-right">
+          <div class="why-points">
+            <div class="wp-item">
+              <span class="wp-num">01</span>
+              <div>
+                <strong>Expert-Led Projects</strong>
+                <p>Every project personally overseen by K. Prasath B.E Civil</p>
+              </div>
+            </div>
+            <div class="wp-item">
+              <span class="wp-num">02</span>
+              <div>
+                <strong>Zero Hidden Charges</strong>
+                <p>Completely transparent pricing from quote to completion</p>
+              </div>
+            </div>
+            <div class="wp-item">
+              <span class="wp-num">03</span>
+              <div>
+                <strong>Timely Completion</strong>
+                <p>Strict project timelines backed by contractual commitment</p>
+              </div>
+            </div>
+            <div class="wp-item">
+              <span class="wp-num">04</span>
+              <div>
+                <strong>Premium Materials Only</strong>
+                <p>We source only ISI-certified, grade-A construction materials</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════
+       PROJECTS
+  ════════════════════════════════════════ -->
+  <section class="projects" id="projects">
+    <div class="container">
+      <div class="proj-section-header">
+        <div class="psh-left">
+          <p class="section-label">Portfolio</p>
+          <h2 class="proj-headline">Featured <em>Projects</em></h2>
+        </div>
+        <div class="proj-filters" id="projFilters">
+          <button class="pf-btn active" data-filter="all">All</button>
+          <button class="pf-btn" data-filter="Residential">Residential</button>
+          <button class="pf-btn" data-filter="Commercial">Commercial</button>
+          <button class="pf-btn" data-filter="Renovation">Renovation</button>
+          <button class="pf-btn" data-filter="Industrial">Industrial</button>
+          <button class="pf-btn" data-filter="Interior">Interior</button>
+        </div>
+      </div>
+
+      <div class="projects-grid" id="projectsGrid"></div>
+
+      <div class="proj-empty" id="projEmpty" style="display:none;">
+        <span class="pe-icon">🏗️</span>
+        <h3>No Projects Yet</h3>
+        <p>Login as admin and add your first project.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════
+       TESTIMONIALS
+  ════════════════════════════════════════ -->
+  <section class="testimonials">
+    <div class="container">
+      <p class="section-label light">Client Stories</p>
+      <h2 class="testi-headline">What Our <em>Clients</em> Say</h2>
+
+      <div class="testi-grid">
+        <div class="testi-card" id="testi-1">
+          <div class="tq-mark">&ldquo;</div>
+          <p class="tq-text">PKB Kalai Construction built our dream home exactly as we envisioned. K. Prasath sir was professional, transparent, and delivered on time. Absolutely recommend!</p>
+          <div class="tq-author">
+            <div class="tqa-avatar">R</div>
+            <div>
+              <strong>Ramesh Kumar</strong>
+              <span>Homeowner, Chennai</span>
+            </div>
+            <div class="tqa-stars">★★★★★</div>
+          </div>
+        </div>
+
+        <div class="testi-card testi-featured" id="testi-2">
+          <div class="tq-mark">&ldquo;</div>
+          <p class="tq-text">Outstanding quality and workmanship. They completed our commercial building ahead of schedule without compromising quality. Truly exceptional service!</p>
+          <div class="tq-author">
+            <div class="tqa-avatar">S</div>
+            <div>
+              <strong>Suresh Babu</strong>
+              <span>Business Owner, Coimbatore</span>
+            </div>
+            <div class="tqa-stars">★★★★★</div>
+          </div>
+        </div>
+
+        <div class="testi-card" id="testi-3">
+          <div class="tq-mark">&ldquo;</div>
+          <p class="tq-text">Very trustworthy and reliable. The pricing was transparent, materials were top-grade, and the team was professional throughout. Highly satisfied!</p>
+          <div class="tq-author">
+            <div class="tqa-avatar">M</div>
+            <div>
+              <strong>Muthu Lakshmi</strong>
+              <span>Villa Owner, Salem</span>
+            </div>
+            <div class="tqa-stars">★★★★★</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════
+       CONTACT
+  ════════════════════════════════════════ -->
+  <section class="contact" id="contact">
+    <div class="contact-split">
+
+      <div class="contact-left">
+        <img src="logo.png" alt="PKB Kalai Construction" class="contact-logo" />
+        <h2 class="contact-headline">
+          Ready to<br/><em>Build?</em>
+        </h2>
+        <p class="contact-sub">
+          Get a free consultation and detailed quote.
+          We respond within 24 hours.
+        </p>
+        <!-- Quick tap buttons (prominent on mobile) -->
+        <div class="quick-contact">
+          <a href="https://wa.me/919791643450" class="qc-wa" target="_blank" rel="noopener">
+            <span class="qc-icon">💬</span> WhatsApp Us
+          </a>
+          <a href="tel:+919791643450" class="qc-call">
+            <span class="qc-icon">📞</span> Call Now
+          </a>
+        </div>
+
+        <div class="contact-details">
+          <a href="tel:+919791643450" class="cd-item">
+            <span class="cd-icon">📞</span>
+            <div>
+              <strong>Call Us</strong>
+              <span>+91 97916 43450</span>
+            </div>
+          </a>
+          <a href="https://wa.me/919791643450" class="cd-item">
+            <span class="cd-icon">💬</span>
+            <div>
+              <strong>WhatsApp</strong>
+              <span>Chat instantly</span>
+            </div>
+          </a>
+          <a href="mailto:pkbkalaiconstruction@gmail.com" class="cd-item">
+            <span class="cd-icon">✉️</span>
+            <div>
+              <strong>Email</strong>
+              <span>pkbkalaiconstruction@gmail.com</span>
+            </div>
+          </a>
+          <div class="cd-item">
+            <span class="cd-icon">📍</span>
+            <div>
+              <strong>Location</strong>
+              <span>Tamil Nadu, India</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="contact-right">
+        <form class="contact-form" id="contactForm" novalidate>
+          <h3 class="cf-title">Send an Enquiry</h3>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="fname">Full Name</label>
+              <input type="text" id="fname" placeholder="Your full name" required />
+            </div>
+            <div class="form-group">
+              <label for="fphone">Phone Number</label>
+              <input type="tel" id="fphone" placeholder="+91 ..." required />
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="femail">Email Address</label>
+            <input type="email" id="femail" placeholder="your@email.com" />
+          </div>
+          <div class="form-group">
+            <label for="fservice">Service Required</label>
+            <select id="fservice">
+              <option value="">Select a service...</option>
+              <option>Residential Construction</option>
+              <option>Commercial Construction</option>
+              <option>Renovation &amp; Remodeling</option>
+              <option>Interior Design &amp; Fit-Out</option>
+              <option>Civil Engineering Works</option>
+              <option>Project Consultation</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="fmsg">Project Details</label>
+            <textarea id="fmsg" rows="4" placeholder="Describe your project..."></textarea>
+          </div>
+          <button type="submit" class="btn-solid full-w" id="submitBtn">Send Enquiry</button>
+          <div class="form-success" id="formSuccess">✅ Message sent! We'll call you within 24 hours.</div>
+        </form>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════
+       FOOTER
+  ════════════════════════════════════════ -->
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <img src="logo.png" alt="PKB Kalai Construction" class="footer-logo" />
+        <p class="footer-tag">Building Better Homes For Better Tomorrow</p>
+      </div>
+      <div class="footer-links-group">
+        <div class="flg">
+          <h5>Company</h5>
+          <a href="#about">About Us</a>
+          <a href="#services">Services</a>
+          <a href="#projects">Projects</a>
+          <a href="#contact">Contact</a>
+        </div>
+        <div class="flg">
+          <h5>Services</h5>
+          <span>Residential</span>
+          <span>Commercial</span>
+          <span>Renovation</span>
+          <span>Civil Works</span>
+        </div>
+        <div class="flg">
+          <h5>Director</h5>
+          <strong class="fd-name">K. PRASATH</strong>
+          <span>B.E Civil Engineer</span>
+          <span>PKB Kalai Construction</span>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2024 PKB Kalai Construction. All rights reserved.</span>
+      <span>Tamil Nadu, India</span>
+    </div>
+  </footer>
+
+  <!-- ═══════════════════════════════════════
+       MODAL: ADMIN LOGIN
+  ════════════════════════════════════════ -->
+  <div class="modal-overlay" id="loginModal">
+    <div class="modal-box login-box">
+      <button class="modal-x" id="closeLogin">✕</button>
+      <img src="logo.png" alt="Logo" class="lm-logo" />
+      <h2 class="lm-title">Admin Login</h2>
+      <p class="lm-sub">Sign in to manage your project portfolio</p>
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="loginUser">Username</label>
+          <input type="text" id="loginUser" placeholder="Username" autocomplete="off" required />
+        </div>
+        <div class="form-group">
+          <label for="loginPass">Password</label>
+          <div class="pw-wrap">
+            <input type="password" id="loginPass" placeholder="Password" required />
+            <button type="button" class="pw-eye" id="pwToggle">👁</button>
+          </div>
+        </div>
+        <div class="login-error" id="loginError">Invalid credentials. Please try again.</div>
+        <button type="submit" class="btn-solid full-w" id="loginBtn">Sign In</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       MODAL: ADD / EDIT PROJECT
+  ════════════════════════════════════════ -->
+  <div class="modal-overlay" id="projectModal">
+    <div class="modal-box project-box">
+      <button class="modal-x" id="closeProjectModal">✕</button>
+      <h2 class="pm-title" id="pmTitle">Add New Project</h2>
+
+      <form id="projectForm" novalidate>
+        <input type="hidden" id="editProjectId" />
+        <div class="form-row">
+          <div class="form-group">
+            <label for="pName">Project Name *</label>
+            <input type="text" id="pName" placeholder="e.g. 3BHK Luxury Villa" required />
+          </div>
+          <div class="form-group">
+            <label for="pCategory">Category *</label>
+            <select id="pCategory" required>
+              <option value="">Select category</option>
+              <option>Residential</option>
+              <option>Commercial</option>
+              <option>Renovation</option>
+              <option>Industrial</option>
+              <option>Interior</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="pLocation">Location</label>
+            <input type="text" id="pLocation" placeholder="e.g. Chennai, Tamil Nadu" />
+          </div>
+          <div class="form-group">
+            <label for="pYear">Year Completed</label>
+            <input type="number" id="pYear" placeholder="e.g. 2023" min="2000" max="2099" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="pClient">Client Name</label>
+          <input type="text" id="pClient" placeholder="e.g. Mr. Ramesh Kumar" />
+        </div>
+        <div class="form-group">
+          <label for="pDesc">Project Description *</label>
+          <textarea id="pDesc" rows="3" placeholder="Describe the project..." required></textarea>
+        </div>
+
+        <!-- Image Upload -->
+        <div class="form-group">
+          <label>Project Image</label>
+          <div class="img-upload-area" id="imgUploadArea">
+            <input type="file" id="pImage" accept="image/*" class="img-file-input" />
+            <div class="img-upload-placeholder" id="imgPlaceholder">
+              <span>📷</span>
+              <span>Click or drag to upload image</span>
+              <span class="img-hint">JPG, PNG, WEBP — max 5MB</span>
+            </div>
+            <div class="img-preview-wrap" id="imgPreviewWrap" style="display:none;">
+              <img id="imgPreview" src="" alt="Preview" />
+              <button type="button" class="img-remove-btn" id="imgRemoveBtn">Remove ✕</button>
+            </div>
+          </div>
+        </div>
+
+        <p class="pm-form-error" id="pmError"></p>
+
+        <div class="pm-actions">
+          <button type="button" class="btn-ghost-dark" id="cancelProjectModal">Cancel</button>
+          <button type="submit" class="btn-solid" id="saveProjectBtn">Save Project</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       MODAL: DELETE CONFIRM
+  ════════════════════════════════════════ -->
+  <div class="modal-overlay" id="deleteModal">
+    <div class="modal-box delete-box">
+      <div class="dm-icon">🗑️</div>
+      <h3>Delete Project?</h3>
+      <p>This cannot be undone.</p>
+      <div class="dm-name" id="dmProjectName"></div>
+      <div class="dm-actions">
+        <button class="btn-ghost-dark" id="cancelDelete">Cancel</button>
+        <button class="btn-danger" id="confirmDelete">Yes, Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       MODAL: VIEW PROJECT
+  ════════════════════════════════════════ -->
+  <div class="modal-overlay" id="viewModal">
+    <div class="modal-box view-box">
+      <button class="modal-x" id="closeViewModal">✕</button>
+      <div id="vmImgWrap" class="vm-img"></div>
+      <div class="vm-body">
+        <span class="proj-cat-badge" id="vmCat"></span>
+        <h2 id="vmTitle"></h2>
+        <p id="vmDesc"></p>
+        <div class="vm-meta" id="vmMeta"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FLOATING WHATSAPP BUTTON -->
+  <a href="https://wa.me/919791643450" class="wa-fab" id="waFab" target="_blank" rel="noopener" aria-label="Chat on WhatsApp">
+    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="white">
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+    </svg>
+    <span class="wa-label">WhatsApp</span>
+  </a>
+
+  <!-- NAV OVERLAY (mobile) -->
+  <div class="nav-overlay" id="navOverlay"></div>
+
+  <script type="module" src="script.js"></script>
+</body>
+</html>
