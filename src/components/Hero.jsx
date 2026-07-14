@@ -86,7 +86,7 @@ export default function Hero() {
               href="#services"
               className="border border-panel bg-secondary/35 hover:bg-secondary text-textLight font-heading font-bold text-sm tracking-wider uppercase px-6 py-4 text-center transition-colors duration-200 min-h-[44px]"
             >
-              Our Capabilities
+              Our Capabilitieszzzzz
             </a>
           </motion.div>
 
