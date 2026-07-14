@@ -141,14 +141,8 @@ ul   { list-style: none; }
 .nav-logo-link { flex-shrink: 0; z-index: 1010; }
 .logo-img { height: 46px; width: auto; object-fit: contain; }
 
-/* Mobile: nav links hidden by default */
+/* Mobile: nav links overlay with smooth transition */
 .nav-links {
-  display: none;
-  list-style: none;
-}
-
-/* Mobile nav open — full screen overlay */
-.nav-links.open {
   display: flex;
   flex-direction: column;
   position: fixed;
@@ -158,14 +152,23 @@ ul   { list-style: none; }
   z-index: 999;
   gap: 0;
   overflow-y: auto;
-  animation: navSlideIn 0.3s var(--ease) both;
+  list-style: none;
+  
+  /* Transition state (closed) */
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-12px);
+  transition: opacity 0.3s var(--ease), transform 0.3s var(--ease), visibility 0.3s;
 }
-@keyframes navSlideIn {
-  from { opacity: 0; transform: translateY(-12px); }
-  to   { opacity: 1; transform: none; }
+
+.nav-links.open {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
 }
-.nav-links.open li { border-bottom: 1px solid rgba(255,255,255,0.05); }
-.nav-links.open .nav-link {
+
+.nav-links li { border-bottom: 1px solid rgba(255,255,255,0.05); }
+.nav-links .nav-link {
   display: block;
   font-family: var(--display); font-size: 2.8rem; font-weight: 900;
   text-transform: uppercase; letter-spacing: 0.02em;
@@ -173,8 +176,8 @@ ul   { list-style: none; }
   padding: 14px 0;
   transition: color 0.2s;
 }
-.nav-links.open .nav-link:hover,
-.nav-links.open .nav-link.active { color: var(--orange); }
+.nav-links .nav-link:hover,
+.nav-links .nav-link.active { color: var(--orange); }
 
 /* When mobile menu is open, keep navbar background dark and hamburger white */
 .navbar.nav-open {
@@ -230,12 +233,27 @@ ul   { list-style: none; }
   .navbar { height: 72px; }
   .logo-img { height: 52px; }
   .nav-inner { padding: 0 32px; }
-  .nav-links { display: flex; gap: 4px; margin-left: auto; }
+  .nav-links {
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+    margin-left: auto;
+    position: static;
+    background: transparent;
+    padding: 0;
+    z-index: auto;
+    overflow-y: visible;
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+    transition: none;
+  }
   .nav-link {
     font-family: var(--body); font-size: 0.88rem; font-weight: 500;
     color: rgba(255,255,255,0.65); padding: 8px 14px; border-radius: 2px;
     transition: color var(--t);
   }
+  .nav-links li { border: none; }
   .navbar.solid .nav-link { color: var(--text-body); }
   .nav-link:hover, .nav-link.active { color: var(--white); }
   .navbar.solid .nav-link:hover,
