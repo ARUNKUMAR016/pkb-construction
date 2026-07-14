@@ -176,12 +176,14 @@ function openNav() {
   navLinks.classList.add('open');
   hamburger.classList.add('open');
   navOverlay.classList.add('show');
+  navbar.classList.add('nav-open');
   document.body.style.overflow = 'hidden';
 }
 function closeNav() {
   navLinks.classList.remove('open');
   hamburger.classList.remove('open');
   navOverlay.classList.remove('show');
+  navbar.classList.remove('nav-open');
   document.body.style.overflow = '';
 }
 

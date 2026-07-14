@@ -152,9 +152,9 @@ ul   { list-style: none; }
   display: flex;
   flex-direction: column;
   position: fixed;
-  top: 60px; left: 0; right: 0; bottom: 0;
+  top: 0; left: 0; right: 0; bottom: 0;
   background: var(--ink);
-  padding: 36px 28px 100px;
+  padding: 88px 28px 100px;
   z-index: 999;
   gap: 0;
   overflow-y: auto;
@@ -175,6 +175,16 @@ ul   { list-style: none; }
 }
 .nav-links.open .nav-link:hover,
 .nav-links.open .nav-link.active { color: var(--orange); }
+
+/* When mobile menu is open, keep navbar background dark and hamburger white */
+.navbar.nav-open {
+  background: var(--ink) !important;
+  box-shadow: none !important;
+  border-bottom: 1px solid rgba(255,255,255,0.08) !important;
+}
+.navbar.nav-open .hamburger span {
+  background: var(--white) !important;
+}
 
 /* Darken page behind open menu */
 .nav-overlay {
