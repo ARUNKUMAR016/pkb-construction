@@ -1,6 +1,5 @@
 /* ============================================================
    PKB KALAI CONSTRUCTION — script.js
-   Admin: username = admin  |  password = pkb@2024
    ============================================================ */
 'use strict';
 
@@ -58,9 +57,16 @@ const DEFAULT_PROJECTS = [
   }
 ];
 
-/* ─── CONSTANTS ─── */
-const ADMIN_USER = 'admin';
-const ADMIN_PASS = 'pkb@2024';
+/* ─── CONSTANTS & SECURITY HASHES ─── */
+const HASHED_USER = '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918'; // SHA-256 of admin
+const HASHED_PASS = '4bf6b146b72019624754f1c41753f9e5889ee02e67e450f8750d1126d9ee7688'; // SHA-256 of pkb@2024
+
+/* ─── SECURITY HELPERS ─── */
+async function sha256(str) {
+  const buf = new TextEncoder().encode(str);
+  const hash = await crypto.subtle.digest('SHA-256', buf);
+  return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
 
 /* ─── STATE ─── */
 let isAdmin       = false;
@@ -336,13 +342,20 @@ pwToggle.addEventListener('click', () => {
   pwToggle.textContent = eye ? '🙈' : '👁';
 });
 
-loginForm.addEventListener('submit', e => {
+loginForm.addEventListener('submit', async e => {
   e.preventDefault();
   loginError.classList.remove('show');
   loginBtn.textContent = 'Signing in…';
   loginBtn.disabled = true;
-  setTimeout(() => {
-    if (loginUser.value.trim() === ADMIN_USER && loginPass.value === ADMIN_PASS) {
+
+  try {
+    const inputUserHash = await sha256(loginUser.value.trim());
+    const inputPassHash = await sha256(loginPass.value);
+
+    // Artificial delay to prevent brute-force timing attacks and preserve transition
+    await new Promise(resolve => setTimeout(resolve, 650));
+
+    if (inputUserHash === HASHED_USER && inputPassHash === HASHED_PASS) {
       isAdmin = true;
       closeModal(loginModal);
       adminBar.classList.add('show');
@@ -355,9 +368,13 @@ loginForm.addEventListener('submit', e => {
       loginError.classList.add('show');
       loginPass.value = '';
     }
+  } catch (err) {
+    console.error('Security verification error:', err);
+    loginError.classList.add('show');
+  } finally {
     loginBtn.textContent = 'Sign In';
     loginBtn.disabled = false;
-  }, 650);
+  }
 });
 
 function logoutAdmin() {
