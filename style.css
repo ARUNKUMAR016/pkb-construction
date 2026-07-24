@@ -1500,3 +1500,131 @@ ul   { list-style: none; }
 .navbar.solid {
   border-bottom: 2px solid var(--orange);
 }
+
+/* ════════════════════════════════════════
+   MOBILE-FIRST ADAPTIVE & RESPONSIVE UI
+   ════════════════════════════════════════ */
+
+/* Touch-optimized Filter Pills for Mobile */
+@media (max-width: 768px) {
+  .proj-filters {
+    display: flex;
+    overflow-x: auto;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
+    padding-bottom: 8px;
+    margin: 12px 0 18px;
+    gap: 8px;
+    scrollbar-width: none;
+  }
+  .proj-filters::-webkit-scrollbar {
+    display: none;
+  }
+  .pf-btn {
+    scroll-snap-align: start;
+    flex-shrink: 0;
+    padding: 8px 18px;
+    font-size: 0.84rem;
+    border-radius: 30px;
+  }
+
+  /* Mobile Bottom Navigation Bar */
+  .mobile-bottom-nav {
+    position: fixed;
+    bottom: 12px;
+    left: 12px;
+    right: 12px;
+    height: 60px;
+    background: rgba(24, 24, 24, 0.94);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    z-index: 9999;
+    box-shadow: 0 10px 32px rgba(0, 0, 0, 0.45);
+    padding: 0 6px;
+  }
+  .mbn-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    color: rgba(255, 255, 255, 0.7);
+    text-decoration: none;
+    font-size: 0.68rem;
+    font-weight: 600;
+    padding: 6px 14px;
+    border-radius: 20px;
+    transition: all 0.2s ease;
+  }
+  .mbn-item.active, .mbn-item:hover {
+    color: var(--orange);
+  }
+  .mbn-item.mbn-call {
+    color: #38bdf8;
+  }
+  .mbn-item.mbn-wa {
+    color: #25D366;
+  }
+
+  body {
+    padding-bottom: 70px;
+  }
+
+  .wa-fab {
+    bottom: 84px !important;
+  }
+}
+
+@media (min-width: 769px) {
+  .mobile-bottom-nav {
+    display: none !important;
+  }
+}
+
+/* Native Mobile Bottom Sheet Modals */
+@media (max-width: 640px) {
+  .modal-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+  .modal-box {
+    border-radius: 24px 24px 0 0;
+    max-height: 90vh;
+    padding: 16px 20px 28px !important;
+  }
+  .modal-box::before {
+    content: '';
+    display: block;
+    width: 44px;
+    height: 5px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 3px;
+    margin: 4px auto 16px;
+  }
+  
+  /* Touch target sizes & mobile input feel */
+  input[type="text"], input[type="number"], input[type="password"], select, textarea {
+    font-size: 16px !important; /* Prevents auto-zoom on iOS Safari */
+    min-height: 48px;
+    border-radius: 8px;
+  }
+  .btn-solid, .btn-ghost-dark, .btn-danger {
+    min-height: 48px;
+    font-size: 0.94rem;
+  }
+  .proj-card {
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .proj-card:active {
+    transform: scale(0.985);
+    transition: transform 0.15s ease;
+  }
+}
+
