@@ -61,28 +61,99 @@ const DEFAULT_PROJECTS = [
 const HASHED_USER = '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918'; // SHA-256 of admin
 const HASHED_PASS = '4bf6b146b72019624754f1c41753f9e5889ee02e67e450f8750d1126d9ee7688'; // SHA-256 of pkb@2024
 
-/* ─── SECURITY HELPERS ─── */
-async function sha256(str) {
-  const buf = new TextEncoder().encode(str);
-  const hash = await crypto.subtle.digest('SHA-256', buf);
-  return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
-}
+/* ─── SUPABASE CLIENT ─── */
+const SUPABASE_URL = 'https://cqkbkemsiszkbziqiwni.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxa2JrZW1zaXN6a2J6aXFpd25pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4ODE5MzMsImV4cCI6MjEwMDQ1NzkzM30.phw_G0FXzhGmfse5ffEXav-YRRxoNNjWv8_O2Z7DXzE';
+const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
 /* ─── STATE ─── */
-let isAdmin       = false;
-let projects      = [];
-let deleteId      = null;
-let activeFilter  = 'all';
-let imageBase64   = null;
+let isAdmin          = false;
+let projects         = [];
+let deleteId         = null;
+let activeFilter     = 'all';
+let imageBase64      = null;
+let pendingImageFile = null;
 
 /* ─── STORAGE ─── */
-function loadProjects() {
+async function loadProjects() {
+  if (supabaseClient) {
+    try {
+      const { data, error } = await supabaseClient
+        .from('projects')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (!error && data) {
+        if (data.length > 0) {
+          projects = data.map(p => ({
+            id: p.id,
+            name: p.name,
+            category: p.category,
+            desc: p.description || p.desc || '',
+            description: p.description || p.desc || '',
+            location: p.location || '',
+            year: p.year || '',
+            client: p.client || '',
+            image: p.image || null
+          }));
+          renderProjects();
+          return;
+        } else {
+          // Seed default projects if database table is empty
+          for (const p of DEFAULT_PROJECTS) {
+            await supabaseClient.from('projects').insert([{
+              id: p.id,
+              name: p.name,
+              category: p.category,
+              description: p.description,
+              location: p.location,
+              year: p.year,
+              client: p.client,
+              image: p.image
+            }]);
+          }
+          projects = [...DEFAULT_PROJECTS];
+          renderProjects();
+          return;
+        }
+      }
+    } catch (e) {
+      console.warn('Supabase fetch failed, fallback to local', e);
+    }
+  }
+
   try {
     const raw = localStorage.getItem('pkb_projects');
     projects = raw ? JSON.parse(raw) : [...DEFAULT_PROJECTS];
     if (!raw) saveProjects();
   } catch { projects = [...DEFAULT_PROJECTS]; }
+  renderProjects();
 }
+
+async function uploadImageToSupabase(file) {
+  if (!supabaseClient) return null;
+  try {
+    const ext = file.name.split('.').pop();
+    const fileName = `${Date.now()}_${Math.random().toString(36).slice(2, 7)}.${ext}`;
+    const { data, error } = await supabaseClient.storage
+      .from('project-images')
+      .upload(fileName, file, { cacheControl: '3600', upsert: true });
+
+    if (error) {
+      console.error('Storage upload error:', error);
+      return null;
+    }
+    const { data: pubUrlData } = supabaseClient.storage
+      .from('project-images')
+      .getPublicUrl(fileName);
+
+    return pubUrlData ? pubUrlData.publicUrl : null;
+  } catch (e) {
+    console.error('Upload exception:', e);
+    return null;
+  }
+}
+
 function saveProjects() {
   try { localStorage.setItem('pkb_projects', JSON.stringify(projects)); } catch {}
 }
@@ -485,6 +556,7 @@ addProjectBtn.addEventListener('click', () => {
   projectForm.reset();
   clearImgPreview();
   imageBase64 = null;
+  pendingImageFile = null;
   pmError.textContent = '';
   openModal(projectModal);
   setTimeout(() => pName.focus(), 280);
@@ -506,6 +578,7 @@ function openEditModal(id) {
   pClient.value   = p.client || '';
   pmError.textContent = '';
   imageBase64 = p.image || null;
+  pendingImageFile = null;
 
   if (p.image) {
     imgPreview.src = p.image;
@@ -520,7 +593,7 @@ function openEditModal(id) {
 /* ════════════════════════════════════════
    SAVE PROJECT
 ════════════════════════════════════════ */
-projectForm.addEventListener('submit', e => {
+projectForm.addEventListener('submit', async e => {
   e.preventDefault();
   pmError.textContent = '';
 
@@ -534,15 +607,47 @@ projectForm.addEventListener('submit', e => {
   saveProjectBtn.textContent = 'Saving…';
   saveProjectBtn.disabled = true;
 
-  setTimeout(() => {
-    const id = editProjectId.value;
+  try {
+    let finalImageUrl = imageBase64;
+
+    if (pendingImageFile) {
+      saveProjectBtn.textContent = 'Uploading photo…';
+      const uploadedUrl = await uploadImageToSupabase(pendingImageFile);
+      if (uploadedUrl) {
+        finalImageUrl = uploadedUrl;
+      }
+    }
+
+    const id = editProjectId.value || uid();
     const data = {
-      id: id || uid(), name, category, desc, description: desc,
-      location: pLocation.value.trim(), year: pYear.value.trim(),
-      client: pClient.value.trim(), image: imageBase64
+      id,
+      name,
+      category,
+      desc,
+      description: desc,
+      location: pLocation.value.trim(),
+      year: pYear.value.trim(),
+      client: pClient.value.trim(),
+      image: finalImageUrl
     };
 
-    if (id) {
+    if (supabaseClient) {
+      const { error } = await supabaseClient
+        .from('projects')
+        .upsert([{
+          id: data.id,
+          name: data.name,
+          category: data.category,
+          description: data.description,
+          location: data.location,
+          year: data.year,
+          client: data.client,
+          image: data.image
+        }]);
+      if (error) console.error('Supabase save error:', error);
+    }
+
+    if (editProjectId.value) {
       const i = projects.findIndex(p => p.id === id);
       if (i !== -1) projects[i] = data;
       toast('✅ Project updated!');
@@ -554,9 +659,14 @@ projectForm.addEventListener('submit', e => {
     saveProjects();
     closeModal(projectModal);
     renderProjects();
+  } catch (err) {
+    console.error('Save error:', err);
+    pmError.textContent = '⚠️ Error saving project.';
+  } finally {
     saveProjectBtn.textContent = 'Save Project';
     saveProjectBtn.disabled = false;
-  }, 550);
+    pendingImageFile = null;
+  }
 });
 
 closeProjectModal.addEventListener('click',  () => closeModal(projectModal));
@@ -573,14 +683,20 @@ function openDeleteModal(id) {
   openModal(deleteModal);
 }
 cancelDelete.addEventListener('click', () => { closeModal(deleteModal); deleteId = null; });
-confirmDelete.addEventListener('click', () => {
+confirmDelete.addEventListener('click', async () => {
   if (!deleteId) return;
-  projects = projects.filter(p => p.id !== deleteId);
+  const targetId = deleteId;
+  projects = projects.filter(p => p.id !== targetId);
   saveProjects();
   closeModal(deleteModal);
   deleteId = null;
   renderProjects();
   toast('🗑️ Project deleted.');
+
+  if (supabaseClient) {
+    const { error } = await supabaseClient.from('projects').delete().eq('id', targetId);
+    if (error) console.error('Supabase delete error:', error);
+  }
 });
 
 /* ════════════════════════════════════════
@@ -608,7 +724,8 @@ closeViewModal.addEventListener('click', () => closeModal(viewModal));
 pImage.addEventListener('change', e => {
   const file = e.target.files[0];
   if (!file) return;
-  if (file.size > 5 * 1024 * 1024) { pmError.textContent = '⚠️ Max image size is 5MB.'; pImage.value = ''; return; }
+  if (file.size > 10 * 1024 * 1024) { pmError.textContent = '⚠️ Max image size is 10MB.'; pImage.value = ''; return; }
+  pendingImageFile = file;
   const r = new FileReader();
   r.onload = ev => {
     imageBase64 = ev.target.result;
@@ -619,12 +736,13 @@ pImage.addEventListener('change', e => {
   r.readAsDataURL(file);
 });
 
-imgRemoveBtn.addEventListener('click', e => { e.stopPropagation(); clearImgPreview(); imageBase64 = null; pImage.value = ''; });
+imgRemoveBtn.addEventListener('click', e => { e.stopPropagation(); clearImgPreview(); imageBase64 = null; pendingImageFile = null; pImage.value = ''; });
 
 function clearImgPreview() {
   imgPreview.src = '';
   imgPreviewWrap.style.display = 'none';
   imgPlaceholder.style.display = 'flex';
+  pendingImageFile = null;
 }
 
 imgUploadArea.addEventListener('dragover', e => { e.preventDefault(); imgUploadArea.style.borderColor = 'var(--orange)'; });
