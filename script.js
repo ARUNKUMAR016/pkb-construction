@@ -61,6 +61,13 @@ const DEFAULT_PROJECTS = [
 const HASHED_USER = '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918'; // SHA-256 of admin
 const HASHED_PASS = '4bf6b146b72019624754f1c41753f9e5889ee02e67e450f8750d1126d9ee7688'; // SHA-256 of pkb@2024
 
+/* ─── SECURITY HELPERS ─── */
+async function sha256(str) {
+  const buf = new TextEncoder().encode(str);
+  const hash = await crypto.subtle.digest('SHA-256', buf);
+  return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
 /* ─── SUPABASE CLIENT ─── */
 const SUPABASE_URL = 'https://cqkbkemsiszkbziqiwni.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxa2JrZW1zaXN6a2J6aXFpd25pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4ODE5MzMsImV4cCI6MjEwMDQ1NzkzM30.phw_G0FXzhGmfse5ffEXav-YRRxoNNjWv8_O2Z7DXzE';
