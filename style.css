@@ -1626,5 +1626,58 @@ ul   { list-style: none; }
     transform: scale(0.985);
     transition: transform 0.15s ease;
   }
+
+  /* Mobile Dedicated Login Sheet Styling */
+  .login-box {
+    border-radius: 28px 28px 0 0 !important;
+    padding: 20px 24px 36px !important;
+    box-shadow: 0 -12px 48px rgba(0, 0, 0, 0.4);
+    background: #ffffff;
+  }
+  .lm-logo {
+    width: 120px;
+    margin: 4px auto 16px;
+  }
+  .lm-title {
+    font-size: 1.45rem;
+  }
+  .lm-sub {
+    font-size: 0.8rem;
+    margin-bottom: 20px;
+  }
+  .login-box .form-group {
+    margin-bottom: 16px;
+  }
+  .login-box input[type="text"],
+  .login-box input[type="password"] {
+    font-size: 16px !important;
+    min-height: 52px;
+    padding: 0 16px;
+    border: 1.5px solid rgba(0, 0, 0, 0.12);
+    border-radius: 10px;
+    background: #fcfcfc;
+    transition: all 0.2s ease;
+  }
+  .login-box input:focus {
+    border-color: var(--orange);
+    background: #ffffff;
+    box-shadow: 0 0 0 4px rgba(224, 92, 16, 0.12);
+    outline: none;
+  }
+  .pw-eye {
+    width: 44px;
+    height: 44px;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #loginBtn {
+    min-height: 52px;
+    font-size: 1rem;
+    font-weight: 700;
+    border-radius: 10px;
+    margin-top: 8px;
+  }
 }
 

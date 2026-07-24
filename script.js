@@ -405,13 +405,16 @@ document.querySelectorAll('.svc-row, .testi-card, .ac-item, .wp-item, .cd-item, 
 /* ════════════════════════════════════════
    ADMIN LOGIN / LOGOUT
 ════════════════════════════════════════ */
-adminTrigger.addEventListener('click', () => {
+function triggerAdminLogin() {
   if (isAdmin) { logoutAdmin(); return; }
   loginUser.value = ''; loginPass.value = '';
   loginError.classList.remove('show');
   openModal(loginModal);
   setTimeout(() => loginUser.focus(), 280);
-});
+}
+if (adminTrigger) adminTrigger.addEventListener('click', triggerAdminLogin);
+const mbnAdminBtn = $('mbnAdminBtn');
+if (mbnAdminBtn) mbnAdminBtn.addEventListener('click', triggerAdminLogin);
 closeLogin.addEventListener('click', () => closeModal(loginModal));
 
 pwToggle.addEventListener('click', () => {
