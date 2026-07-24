@@ -1682,3 +1682,79 @@ body.modal-open .mobile-bottom-nav { display: none !important; }
   }
 }
 
+/* ════════════════════════════════════════
+   GLASSMORPHISM & PREMIUM UI POLISH
+   ════════════════════════════════════════ */
+
+/* Glassmorphism Navbar Solid State */
+.navbar.solid {
+  background: rgba(18, 18, 18, 0.88) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Glassmorphism Hero Stats Bar */
+.hc-stats-bar {
+  background: rgba(255, 255, 255, 0.07) !important;
+  backdrop-filter: blur(18px) !important;
+  -webkit-backdrop-filter: blur(18px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.35) !important;
+  border-radius: 16px !important;
+}
+
+/* Glassmorphism Project Cards & Badges */
+.projects-grid {
+  gap: 16px !important;
+  background: transparent !important;
+}
+.proj-card {
+  border-radius: 14px !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.04) !important;
+  transition: all 0.32s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  background: #ffffff !important;
+}
+.proj-card:hover {
+  transform: translateY(-5px) !important;
+  box-shadow: 0 20px 40px -10px rgba(224, 92, 16, 0.18) !important;
+  border-color: rgba(224, 92, 16, 0.35) !important;
+}
+.proj-cat-badge {
+  background: rgba(224, 92, 16, 0.1) !important;
+  border: 1px solid rgba(224, 92, 16, 0.25) !important;
+  color: var(--orange) !important;
+  padding: 4px 12px !important;
+  border-radius: 20px !important;
+  font-size: 0.72rem !important;
+  font-weight: 700 !important;
+}
+
+/* Glassmorphism Category Filter Pills */
+.pf-btn {
+  border-radius: 30px !important;
+  background: rgba(255, 255, 255, 0.8) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  padding: 9px 20px !important;
+}
+.pf-btn.active {
+  background: var(--orange) !important;
+  box-shadow: 0 6px 20px rgba(224, 92, 16, 0.35) !important;
+  border-color: var(--orange) !important;
+  color: #ffffff !important;
+}
+
+/* Pulsing Aura for WhatsApp Floating Button */
+@keyframes waPulse {
+  0% { box-shadow: 0 8px 24px rgba(37, 211, 102, 0.4), 0 0 0 0 rgba(37, 211, 102, 0.5); }
+  70% { box-shadow: 0 8px 24px rgba(37, 211, 102, 0.4), 0 0 0 14px rgba(37, 211, 102, 0); }
+  100% { box-shadow: 0 8px 24px rgba(37, 211, 102, 0.4), 0 0 0 0 rgba(37, 211, 102, 0); }
+}
+.wa-fab {
+  animation: waPulse 2.5s infinite !important;
+}
+
