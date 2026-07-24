@@ -227,8 +227,8 @@ const formSuccess     = $('formSuccess');
 /* ════════════════════════════════════════
    MODAL HELPERS
 ════════════════════════════════════════ */
-function openModal(el)  { el.classList.add('open'); document.body.style.overflow = 'hidden'; }
-function closeModal(el) { el.classList.remove('open'); document.body.style.overflow = ''; }
+function openModal(el)  { el.classList.add('open'); document.body.classList.add('modal-open'); document.body.style.overflow = 'hidden'; }
+function closeModal(el) { el.classList.remove('open'); document.body.classList.remove('modal-open'); document.body.style.overflow = ''; }
 
 [loginModal, projectModal, deleteModal, viewModal].forEach(m =>
   m.addEventListener('click', e => { if (e.target === m) closeModal(m); })
