@@ -107,7 +107,24 @@ function parseProjectImages(p) {
   if (p.images && Array.isArray(p.images) && p.images.length > 0) {
     imgList = p.images.filter(Boolean);
   } else if (p.image) {
-    imgList = [p.image];
+    if (typeof p.image === 'string') {
+      const trimmed = p.image.trim();
+      if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+        try {
+          const parsed = JSON.parse(trimmed);
+          if (Array.isArray(parsed)) imgList = parsed.filter(Boolean);
+        } catch (e) {}
+      }
+      if (imgList.length === 0) {
+        if (trimmed.includes(',')) {
+          imgList = trimmed.split(',').map(s => s.trim()).filter(Boolean);
+        } else {
+          imgList = [trimmed];
+        }
+      }
+    } else if (Array.isArray(p.image)) {
+      imgList = p.image.filter(Boolean);
+    }
   }
   return {
     id: p.id,
@@ -140,6 +157,7 @@ async function loadProjects() {
         } else {
           // Seed default projects if database table is empty
           for (const p of DEFAULT_PROJECTS) {
+            const seedImg = p.images && p.images.length > 1 ? JSON.stringify(p.images) : (p.image || (p.images ? p.images[0] : null));
             await supabaseClient.from('projects').insert([{
               id: p.id,
               name: p.name,
@@ -148,8 +166,7 @@ async function loadProjects() {
               location: p.location,
               year: p.year,
               client: p.client,
-              image: p.image,
-              images: p.images
+              image: seedImg
             }]);
           }
           projects = DEFAULT_PROJECTS.map(parseProjectImages);
@@ -173,11 +190,14 @@ async function loadProjects() {
 async function uploadImageToSupabase(file) {
   if (!supabaseClient) return null;
   try {
-    const ext = file.name.split('.').pop();
+    const rawExt = file.name ? file.name.split('.').pop() : 'jpg';
+    const ext = rawExt ? rawExt.toLowerCase() : 'jpg';
     const fileName = `${Date.now()}_${Math.random().toString(36).slice(2, 7)}.${ext}`;
+    const contentType = file.type || (ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg');
+
     const { error } = await supabaseClient.storage
       .from('project-images')
-      .upload(fileName, file, { cacheControl: '3600', upsert: true });
+      .upload(fileName, file, { cacheControl: '3600', upsert: true, contentType });
 
     if (error) {
       console.error('Storage upload error:', error);
@@ -724,11 +744,19 @@ projectForm.addEventListener('submit', async e => {
         finalImageUrls.push(item.url);
       } else {
         const uploadedUrl = await uploadImageToSupabase(item.file);
-        finalImageUrls.push(uploadedUrl || item.url);
+        if (!uploadedUrl) {
+          pmError.textContent = `⚠️ Failed to upload photo "${item.file.name || 'image'}". Please try again.`;
+          saveProjectBtn.textContent = 'Save Project';
+          saveProjectBtn.disabled = false;
+          return;
+        }
+        finalImageUrls.push(uploadedUrl);
       }
     }
 
     const id = editProjectId.value || uid();
+    const storedImageValue = finalImageUrls.length > 1 ? JSON.stringify(finalImageUrls) : (finalImageUrls[0] || null);
+
     const data = {
       id,
       name,
@@ -738,25 +766,33 @@ projectForm.addEventListener('submit', async e => {
       location: pLocation.value.trim(),
       year: pYear.value.trim(),
       client: pClient.value.trim(),
-      image: finalImageUrls[0] || null,
+      image: storedImageValue,
       images: finalImageUrls
     };
 
     if (supabaseClient) {
+      const payload = {
+        id: data.id,
+        name: data.name,
+        category: data.category,
+        description: data.description,
+        location: data.location,
+        year: data.year,
+        client: data.client,
+        image: data.image
+      };
+
       const { error } = await supabaseClient
         .from('projects')
-        .upsert([{
-          id: data.id,
-          name: data.name,
-          category: data.category,
-          description: data.description,
-          location: data.location,
-          year: data.year,
-          client: data.client,
-          image: data.image,
-          images: data.images
-        }]);
-      if (error) console.error('Supabase save error:', error);
+        .upsert([payload]);
+
+      if (error) {
+        console.error('Supabase save error:', error);
+        pmError.textContent = `⚠️ Database save failed: ${error.message || 'Could not save project'}`;
+        saveProjectBtn.textContent = 'Save Project';
+        saveProjectBtn.disabled = false;
+        return;
+      }
     }
 
     if (editProjectId.value) {
