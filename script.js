@@ -13,7 +13,12 @@ const DEFAULT_PROJECTS = [
     location: 'Chennai, Tamil Nadu',
     year: '2023',
     client: 'Mr. Ramesh Kumar',
-    image: null
+    image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=800&q=80'
+    ]
   },
   {
     id: 'proj-default-2',
@@ -23,7 +28,11 @@ const DEFAULT_PROJECTS = [
     location: 'Coimbatore, Tamil Nadu',
     year: '2022',
     client: 'Suresh Enterprises',
-    image: null
+    image: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=800&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?auto=format&fit=crop&w=800&q=80'
+    ]
   },
   {
     id: 'proj-default-3',
@@ -33,7 +42,11 @@ const DEFAULT_PROJECTS = [
     location: 'Salem, Tamil Nadu',
     year: '2023',
     client: 'Mr. Arjun Patel',
-    image: null
+    image: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=800&q=80'
+    ]
   },
   {
     id: 'proj-default-4',
@@ -43,7 +56,10 @@ const DEFAULT_PROJECTS = [
     location: 'Madurai, Tamil Nadu',
     year: '2021',
     client: 'Sri Lakshmi Textiles',
-    image: null
+    image: 'https://images.unsplash.com/photo-1590069261209-f8e9b8642343?auto=format&fit=crop&w=800&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1590069261209-f8e9b8642343?auto=format&fit=crop&w=800&q=80'
+    ]
   },
   {
     id: 'proj-default-5',
@@ -53,7 +69,10 @@ const DEFAULT_PROJECTS = [
     location: 'Tiruchirappalli, Tamil Nadu',
     year: '2022',
     client: 'Logistics Corp Ltd.',
-    image: null
+    image: 'https://images.unsplash.com/photo-1581094288338-2314dddb7ecc?auto=format&fit=crop&w=800&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1581094288338-2314dddb7ecc?auto=format&fit=crop&w=800&q=80'
+    ]
   }
 ];
 
@@ -74,12 +93,35 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
 /* ─── STATE ─── */
-let isAdmin          = false;
-let projects         = [];
-let deleteId         = null;
-let activeFilter     = 'all';
-let imageBase64      = null;
-let pendingImageFile = null;
+let isAdmin       = false;
+let projects      = [];
+let deleteId      = null;
+let activeFilter  = 'all';
+let modalImages   = []; // array of { url: string, file?: File, isExisting: boolean }
+let viewGallery   = { images: [], activeIndex: 0, category: '' };
+let enquiries     = [];
+
+/* ─── HELPER TO NORMALIZE PROJECT IMAGES ─── */
+function parseProjectImages(p) {
+  let imgList = [];
+  if (p.images && Array.isArray(p.images) && p.images.length > 0) {
+    imgList = p.images.filter(Boolean);
+  } else if (p.image) {
+    imgList = [p.image];
+  }
+  return {
+    id: p.id,
+    name: p.name,
+    category: p.category,
+    desc: p.description || p.desc || '',
+    description: p.description || p.desc || '',
+    location: p.location || '',
+    year: p.year || '',
+    client: p.client || '',
+    image: imgList[0] || null,
+    images: imgList
+  };
+}
 
 /* ─── STORAGE ─── */
 async function loadProjects() {
@@ -92,17 +134,7 @@ async function loadProjects() {
 
       if (!error && data) {
         if (data.length > 0) {
-          projects = data.map(p => ({
-            id: p.id,
-            name: p.name,
-            category: p.category,
-            desc: p.description || p.desc || '',
-            description: p.description || p.desc || '',
-            location: p.location || '',
-            year: p.year || '',
-            client: p.client || '',
-            image: p.image || null
-          }));
+          projects = data.map(parseProjectImages);
           renderProjects();
           return;
         } else {
@@ -116,10 +148,11 @@ async function loadProjects() {
               location: p.location,
               year: p.year,
               client: p.client,
-              image: p.image
+              image: p.image,
+              images: p.images
             }]);
           }
-          projects = [...DEFAULT_PROJECTS];
+          projects = DEFAULT_PROJECTS.map(parseProjectImages);
           renderProjects();
           return;
         }
@@ -131,9 +164,9 @@ async function loadProjects() {
 
   try {
     const raw = localStorage.getItem('pkb_projects');
-    projects = raw ? JSON.parse(raw) : [...DEFAULT_PROJECTS];
+    projects = raw ? JSON.parse(raw).map(parseProjectImages) : DEFAULT_PROJECTS.map(parseProjectImages);
     if (!raw) saveProjects();
-  } catch { projects = [...DEFAULT_PROJECTS]; }
+  } catch { projects = DEFAULT_PROJECTS.map(parseProjectImages); }
   renderProjects();
 }
 
@@ -142,7 +175,7 @@ async function uploadImageToSupabase(file) {
   try {
     const ext = file.name.split('.').pop();
     const fileName = `${Date.now()}_${Math.random().toString(36).slice(2, 7)}.${ext}`;
-    const { data, error } = await supabaseClient.storage
+    const { error } = await supabaseClient.storage
       .from('project-images')
       .upload(fileName, file, { cacheControl: '3600', upsert: true });
 
@@ -199,10 +232,8 @@ const pDesc           = $('pDesc');
 const pClient         = $('pClient');
 const pImage          = $('pImage');
 const imgUploadArea   = $('imgUploadArea');
-const imgPlaceholder  = $('imgPlaceholder');
-const imgPreviewWrap  = $('imgPreviewWrap');
-const imgPreview      = $('imgPreview');
-const imgRemoveBtn    = $('imgRemoveBtn');
+const imgCountBadge   = $('imgCountBadge');
+const multiImgGrid    = $('multiImgGrid');
 const pmError         = $('pmError');
 const saveProjectBtn  = $('saveProjectBtn');
 
@@ -214,10 +245,21 @@ const confirmDelete   = $('confirmDelete');
 const viewModal       = $('viewModal');
 const closeViewModal  = $('closeViewModal');
 const vmImgWrap       = $('vmImgWrap');
+const vmPrevBtn       = $('vmPrevBtn');
+const vmNextBtn       = $('vmNextBtn');
+const vmCounter       = $('vmCounter');
+const vmThumbsBar     = $('vmThumbsBar');
 const vmCat           = $('vmCat');
 const vmTitle         = $('vmTitle');
 const vmDesc          = $('vmDesc');
 const vmMeta          = $('vmMeta');
+
+const enquiriesModal      = $('enquiriesModal');
+const closeEnquiriesModal = $('closeEnquiriesModal');
+const adminEnquiriesBtn   = $('adminEnquiriesBtn');
+const abEnquiriesCount    = $('abEnquiriesCount');
+const emTotalBadge        = $('emTotalBadge');
+const enquiriesList       = $('enquiriesList');
 
 const projectsGrid    = $('projectsGrid');
 const projEmpty       = $('projEmpty');
@@ -500,8 +542,13 @@ function buildCard(proj, idx) {
   card.dataset.id = proj.id;
   card.style.animationDelay = idx * 0.06 + 's';
 
-  const imgH = proj.image
-    ? `<div class="proj-img-wrap"><img src="${proj.image}" alt="${esc(proj.name)}" loading="lazy"/></div>`
+  const imgList = (proj.images && proj.images.length > 0) ? proj.images : (proj.image ? [proj.image] : []);
+  const mainImg = imgList[0];
+  const count = imgList.length;
+  const countBadge = count > 1 ? `<div class="proj-photo-count">📷 ${count} Photos</div>` : '';
+
+  const imgH = mainImg
+    ? `<div class="proj-img-wrap"><img src="${mainImg}" alt="${esc(proj.name)}" loading="lazy"/>${countBadge}</div>`
     : `<div class="proj-placeholder-bg"><span class="pp-icon">${catEmoji(proj.category)}</span><span class="pp-label">${esc(proj.category)}</span></div>`;
 
   const meta = [
@@ -564,9 +611,8 @@ addProjectBtn.addEventListener('click', () => {
   pmTitle.textContent = 'Add New Project';
   editProjectId.value = '';
   projectForm.reset();
-  clearImgPreview();
-  imageBase64 = null;
-  pendingImageFile = null;
+  modalImages = [];
+  renderModalThumbnails();
   pmError.textContent = '';
   openModal(projectModal);
   setTimeout(() => pName.focus(), 280);
@@ -587,17 +633,65 @@ function openEditModal(id) {
   pDesc.value     = p.desc || p.description || '';
   pClient.value   = p.client || '';
   pmError.textContent = '';
-  imageBase64 = p.image || null;
-  pendingImageFile = null;
 
-  if (p.image) {
-    imgPreview.src = p.image;
-    imgPreviewWrap.style.display = 'block';
-    imgPlaceholder.style.display = 'none';
-  } else { clearImgPreview(); }
+  const imgList = (p.images && p.images.length > 0) ? p.images : (p.image ? [p.image] : []);
+  modalImages = imgList.map(url => ({ url, isExisting: true }));
+  renderModalThumbnails();
 
   openModal(projectModal);
   setTimeout(() => pName.focus(), 280);
+}
+
+/* ════════════════════════════════════════
+   RENDER MODAL THUMBNAILS
+════════════════════════════════════════ */
+function renderModalThumbnails() {
+  if (!imgCountBadge || !multiImgGrid) return;
+  const count = modalImages.length;
+  imgCountBadge.textContent = `${count} ${count === 1 ? 'image' : 'images'} attached`;
+
+  if (count === 0) {
+    multiImgGrid.style.display = 'none';
+    multiImgGrid.innerHTML = '';
+    return;
+  }
+
+  multiImgGrid.style.display = 'grid';
+  multiImgGrid.innerHTML = '';
+
+  modalImages.forEach((item, index) => {
+    const div = document.createElement('div');
+    div.className = 'mig-item' + (index === 0 ? ' is-cover' : '');
+    div.innerHTML = `
+      <img src="${item.url}" alt="Photo ${index + 1}" />
+      ${index === 0 ? '<span class="mig-cover-badge">COVER</span>' : ''}
+      <div class="mig-actions">
+        ${index !== 0 ? `<button type="button" class="mig-btn mig-btn-cover" data-index="${index}">Set Cover</button>` : ''}
+        <button type="button" class="mig-btn mig-btn-remove" data-index="${index}">Remove ✕</button>
+      </div>
+    `;
+
+    const coverBtn = div.querySelector('.mig-btn-cover');
+    if (coverBtn) {
+      coverBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        const target = modalImages.splice(index, 1)[0];
+        modalImages.unshift(target);
+        renderModalThumbnails();
+      });
+    }
+
+    const removeBtn = div.querySelector('.mig-btn-remove');
+    if (removeBtn) {
+      removeBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        modalImages.splice(index, 1);
+        renderModalThumbnails();
+      });
+    }
+
+    multiImgGrid.appendChild(div);
+  });
 }
 
 /* ════════════════════════════════════════
@@ -618,13 +712,19 @@ projectForm.addEventListener('submit', async e => {
   saveProjectBtn.disabled = true;
 
   try {
-    let finalImageUrl = imageBase64;
+    const finalImageUrls = [];
+    const pendingUploads = modalImages.filter(img => !img.isExisting && img.file);
 
-    if (pendingImageFile) {
-      saveProjectBtn.textContent = 'Uploading photo…';
-      const uploadedUrl = await uploadImageToSupabase(pendingImageFile);
-      if (uploadedUrl) {
-        finalImageUrl = uploadedUrl;
+    if (pendingUploads.length > 0) {
+      saveProjectBtn.textContent = `Uploading ${pendingUploads.length} photo(s)…`;
+    }
+
+    for (const item of modalImages) {
+      if (item.isExisting || !item.file) {
+        finalImageUrls.push(item.url);
+      } else {
+        const uploadedUrl = await uploadImageToSupabase(item.file);
+        finalImageUrls.push(uploadedUrl || item.url);
       }
     }
 
@@ -638,7 +738,8 @@ projectForm.addEventListener('submit', async e => {
       location: pLocation.value.trim(),
       year: pYear.value.trim(),
       client: pClient.value.trim(),
-      image: finalImageUrl
+      image: finalImageUrls[0] || null,
+      images: finalImageUrls
     };
 
     if (supabaseClient) {
@@ -652,7 +753,8 @@ projectForm.addEventListener('submit', async e => {
           location: data.location,
           year: data.year,
           client: data.client,
-          image: data.image
+          image: data.image,
+          images: data.images
         }]);
       if (error) console.error('Supabase save error:', error);
     }
@@ -675,7 +777,6 @@ projectForm.addEventListener('submit', async e => {
   } finally {
     saveProjectBtn.textContent = 'Save Project';
     saveProjectBtn.disabled = false;
-    pendingImageFile = null;
   }
 });
 
@@ -710,12 +811,17 @@ confirmDelete.addEventListener('click', async () => {
 });
 
 /* ════════════════════════════════════════
-   VIEW PROJECT
+   VIEW PROJECT GALLERY
 ════════════════════════════════════════ */
 function openView(proj) {
-  vmImgWrap.innerHTML = proj.image
-    ? `<img src="${proj.image}" alt="${esc(proj.name)}" />`
-    : `<div class="vm-no-img">${catEmoji(proj.category)}</div>`;
+  const imgList = (proj.images && proj.images.length > 0)
+    ? proj.images
+    : (proj.image ? [proj.image] : []);
+
+  viewGallery.images = imgList;
+  viewGallery.activeIndex = 0;
+  viewGallery.category = proj.category;
+
   vmCat.textContent   = proj.category;
   vmTitle.textContent = proj.name;
   vmDesc.textContent  = proj.desc || proj.description || '';
@@ -724,69 +830,313 @@ function openView(proj) {
     proj.year     && `<span>📅 ${esc(proj.year)}</span>`,
     proj.client   && `<span>👤 ${esc(proj.client)}</span>`
   ].filter(Boolean).join('');
+
+  renderViewGallery();
   openModal(viewModal);
 }
+
+function renderViewGallery() {
+  const { images, activeIndex, category } = viewGallery;
+  if (!images || images.length === 0) {
+    vmImgWrap.innerHTML = `<div class="vm-no-img">${catEmoji(category)}</div>`;
+    vmPrevBtn.style.display = 'none';
+    vmNextBtn.style.display = 'none';
+    vmCounter.style.display = 'none';
+    vmThumbsBar.style.display = 'none';
+    return;
+  }
+
+  // Display active image
+  vmImgWrap.innerHTML = `<img src="${images[activeIndex]}" alt="Project image ${activeIndex + 1}" />`;
+
+  if (images.length > 1) {
+    vmPrevBtn.style.display = 'flex';
+    vmNextBtn.style.display = 'flex';
+    vmCounter.style.display = 'block';
+    vmCounter.textContent = `${activeIndex + 1} / ${images.length}`;
+
+    vmThumbsBar.style.display = 'flex';
+    vmThumbsBar.innerHTML = '';
+    images.forEach((url, i) => {
+      const thumb = document.createElement('div');
+      thumb.className = 'vmt-item' + (i === activeIndex ? ' active' : '');
+      thumb.innerHTML = `<img src="${url}" alt="Thumbnail ${i + 1}" />`;
+      thumb.addEventListener('click', () => {
+        viewGallery.activeIndex = i;
+        renderViewGallery();
+      });
+      vmThumbsBar.appendChild(thumb);
+    });
+  } else {
+    vmPrevBtn.style.display = 'none';
+    vmNextBtn.style.display = 'none';
+    vmCounter.style.display = 'none';
+    vmThumbsBar.style.display = 'none';
+  }
+}
+
+vmPrevBtn.addEventListener('click', e => {
+  e.stopPropagation();
+  if (viewGallery.images.length <= 1) return;
+  viewGallery.activeIndex = (viewGallery.activeIndex - 1 + viewGallery.images.length) % viewGallery.images.length;
+  renderViewGallery();
+});
+
+vmNextBtn.addEventListener('click', e => {
+  e.stopPropagation();
+  if (viewGallery.images.length <= 1) return;
+  viewGallery.activeIndex = (viewGallery.activeIndex + 1) % viewGallery.images.length;
+  renderViewGallery();
+});
+
+document.addEventListener('keydown', e => {
+  if (!viewModal.classList.contains('open')) return;
+  if (e.key === 'ArrowLeft') {
+    vmPrevBtn.click();
+  } else if (e.key === 'ArrowRight') {
+    vmNextBtn.click();
+  }
+});
+
 closeViewModal.addEventListener('click', () => closeModal(viewModal));
 
 /* ════════════════════════════════════════
-   IMAGE UPLOAD
+   MULTI-IMAGE UPLOAD SELECTION & DRAG-DROP
 ════════════════════════════════════════ */
-pImage.addEventListener('change', e => {
-  const file = e.target.files[0];
-  if (!file) return;
-  if (file.size > 10 * 1024 * 1024) { pmError.textContent = '⚠️ Max image size is 10MB.'; pImage.value = ''; return; }
-  pendingImageFile = file;
-  const r = new FileReader();
-  r.onload = ev => {
-    imageBase64 = ev.target.result;
-    imgPreview.src = imageBase64;
-    imgPreviewWrap.style.display = 'block';
-    imgPlaceholder.style.display = 'none';
-  };
-  r.readAsDataURL(file);
-});
+function handleImageFilesSelect(files) {
+  if (!files || !files.length) return;
+  pmError.textContent = '';
+  const fileArray = Array.from(files);
 
-imgRemoveBtn.addEventListener('click', e => { e.stopPropagation(); clearImgPreview(); imageBase64 = null; pendingImageFile = null; pImage.value = ''; });
-
-function clearImgPreview() {
-  imgPreview.src = '';
-  imgPreviewWrap.style.display = 'none';
-  imgPlaceholder.style.display = 'flex';
-  pendingImageFile = null;
-}
-
-imgUploadArea.addEventListener('dragover', e => { e.preventDefault(); imgUploadArea.style.borderColor = 'var(--orange)'; });
-imgUploadArea.addEventListener('dragleave', () => { imgUploadArea.style.borderColor = ''; });
-imgUploadArea.addEventListener('drop', e => {
-  e.preventDefault(); imgUploadArea.style.borderColor = '';
-  const file = e.dataTransfer.files[0];
-  if (file && file.type.startsWith('image/')) {
-    if (file.size > 5 * 1024 * 1024) { pmError.textContent = '⚠️ Max image size is 5MB.'; return; }
+  fileArray.forEach(file => {
+    if (!file.type.startsWith('image/')) return;
+    if (file.size > 10 * 1024 * 1024) {
+      pmError.textContent = '⚠️ Some photos exceed 10MB limit.';
+      return;
+    }
     const r = new FileReader();
     r.onload = ev => {
-      imageBase64 = ev.target.result;
-      imgPreview.src = imageBase64;
-      imgPreviewWrap.style.display = 'block';
-      imgPlaceholder.style.display = 'none';
+      modalImages.push({
+        url: ev.target.result,
+        file: file,
+        isExisting: false
+      });
+      renderModalThumbnails();
     };
     r.readAsDataURL(file);
+  });
+}
+
+pImage.addEventListener('change', e => {
+  handleImageFilesSelect(e.target.files);
+  pImage.value = '';
+});
+
+imgUploadArea.addEventListener('dragover', e => { e.preventDefault(); imgUploadArea.classList.add('dragover'); });
+imgUploadArea.addEventListener('dragleave', () => { imgUploadArea.classList.remove('dragover'); });
+imgUploadArea.addEventListener('drop', e => {
+  e.preventDefault();
+  imgUploadArea.classList.remove('dragover');
+  if (e.dataTransfer.files && e.dataTransfer.files.length) {
+    handleImageFilesSelect(e.dataTransfer.files);
   }
 });
 
 /* ════════════════════════════════════════
-   CONTACT FORM
+   CLIENT ENQUIRIES STORAGE & MANAGER
+════════════════════════════════════════ */
+async function loadEnquiries() {
+  if (supabaseClient) {
+    try {
+      const { data, error } = await supabaseClient
+        .from('enquiries')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (!error && data) {
+        enquiries = data;
+        updateEnquiriesBadge();
+        return;
+      }
+    } catch (e) {
+      console.warn('Supabase enquiries fetch fallback to local:', e);
+    }
+  }
+
+  try {
+    const raw = localStorage.getItem('pkb_enquiries');
+    enquiries = raw ? JSON.parse(raw) : [];
+  } catch { enquiries = []; }
+  updateEnquiriesBadge();
+}
+
+function saveEnquiriesLocal() {
+  try { localStorage.setItem('pkb_enquiries', JSON.stringify(enquiries)); } catch {}
+  updateEnquiriesBadge();
+}
+
+function updateEnquiriesBadge() {
+  const count = enquiries.length;
+  if (abEnquiriesCount) abEnquiriesCount.textContent = count;
+  if (emTotalBadge) emTotalBadge.textContent = `${count} ${count === 1 ? 'Received' : 'Received'}`;
+}
+
+async function addEnquiry(enquiryData) {
+  enquiries.unshift(enquiryData);
+  saveEnquiriesLocal();
+
+  if (supabaseClient) {
+    try {
+      await supabaseClient.from('enquiries').insert([enquiryData]);
+    } catch (e) {
+      console.error('Supabase enquiry save error:', e);
+    }
+  }
+}
+
+async function deleteEnquiry(id) {
+  enquiries = enquiries.filter(item => item.id !== id);
+  saveEnquiriesLocal();
+  renderEnquiries();
+  toast('🗑️ Enquiry deleted.');
+
+  if (supabaseClient) {
+    try {
+      await supabaseClient.from('enquiries').delete().eq('id', id);
+    } catch (e) {
+      console.error('Supabase enquiry delete error:', e);
+    }
+  }
+}
+
+function renderEnquiries() {
+  if (!enquiriesList) return;
+  updateEnquiriesBadge();
+
+  if (enquiries.length === 0) {
+    enquiriesList.innerHTML = `<div class="enquiries-empty">📭 No enquiries received yet.</div>`;
+    return;
+  }
+
+  enquiriesList.innerHTML = '';
+  enquiries.forEach(item => {
+    const card = document.createElement('div');
+    card.className = 'enquiry-card';
+
+    const cleanPhone = String(item.phone || '').replace(/\D/g, '');
+    const dateStr = item.created_at ? new Date(item.created_at).toLocaleString() : 'Just now';
+
+    const waText = encodeURIComponent(
+      `Hello ${item.name}, thank you for contacting PKB Kalai Construction regarding your ${item.service || 'project'} enquiry. We are ready to assist you!`
+    );
+
+    card.innerHTML = `
+      <div class="ec-header">
+        <span class="ec-name">${esc(item.name)}</span>
+        <span class="ec-service">${esc(item.service || 'General Enquiry')}</span>
+      </div>
+      <div class="ec-meta">
+        <span>📞 ${esc(item.phone)}</span>
+        ${item.email ? `<span>✉️ ${esc(item.email)}</span>` : ''}
+      </div>
+      ${item.message ? `<div class="ec-msg">${esc(item.message)}</div>` : ''}
+      <div class="ec-footer">
+        <span class="ec-date">📅 ${esc(dateStr)}</span>
+        <div class="ec-actions">
+          <a href="tel:${cleanPhone}" class="ec-btn ec-btn-call" title="Call Client">📞 Call</a>
+          <a href="https://wa.me/91${cleanPhone}?text=${waText}" target="_blank" rel="noopener" class="ec-btn ec-btn-wa" title="WhatsApp Chat">💬 WhatsApp</a>
+          <button type="button" class="ec-btn ec-btn-del" data-id="${item.id}" title="Delete">🗑️</button>
+        </div>
+      </div>
+    `;
+
+    card.querySelector('.ec-btn-del').addEventListener('click', () => {
+      deleteEnquiry(item.id);
+    });
+
+    enquiriesList.appendChild(card);
+  });
+}
+
+if (adminEnquiriesBtn) {
+  adminEnquiriesBtn.addEventListener('click', () => {
+    renderEnquiries();
+    openModal(enquiriesModal);
+  });
+}
+if (closeEnquiriesModal) {
+  closeEnquiriesModal.addEventListener('click', () => closeModal(enquiriesModal));
+}
+
+/* ════════════════════════════════════════
+   CONTACT FORM SUBMISSION
 ════════════════════════════════════════ */
 if (contactForm) {
-  contactForm.addEventListener('submit', e => {
+  contactForm.addEventListener('submit', async e => {
     e.preventDefault();
-    const btn = $('submitBtn');
-    btn.textContent = 'Sending…'; btn.disabled = true;
-    setTimeout(() => {
-      btn.textContent = 'Send Enquiry'; btn.disabled = false;
-      formSuccess.classList.add('show');
-      contactForm.reset();
-      setTimeout(() => formSuccess.classList.remove('show'), 5000);
-    }, 1400);
+
+    const nameEl    = $('fname');
+    const phoneEl   = $('fphone');
+    const emailEl   = $('femail');
+    const serviceEl = $('fservice');
+    const msgEl     = $('fmsg');
+    const btn       = $('submitBtn');
+
+    const name    = nameEl ? nameEl.value.trim() : '';
+    const phone   = phoneEl ? phoneEl.value.trim() : '';
+    const email   = emailEl ? emailEl.value.trim() : '';
+    const service = serviceEl ? serviceEl.value : '';
+    const message = msgEl ? msgEl.value.trim() : '';
+
+    if (!name || !phone) {
+      alert('Please fill in your Full Name and Phone Number.');
+      return;
+    }
+
+    btn.textContent = 'Sending Enquiry…';
+    btn.disabled = true;
+
+    try {
+      const enquiryObj = {
+        id: uid(),
+        name,
+        phone,
+        email,
+        service,
+        message,
+        created_at: new Date().toISOString()
+      };
+
+      await addEnquiry(enquiryObj);
+
+      // Open WhatsApp directly with populated enquiry details
+      const waText = encodeURIComponent(
+        `*New Project Enquiry — PKB Kalai Construction*\n\n` +
+        `👤 *Name:* ${name}\n` +
+        `📞 *Phone:* ${phone}\n` +
+        `✉️ *Email:* ${email || 'N/A'}\n` +
+        `🏗️ *Service:* ${service || 'General Enquiry'}\n` +
+        `📝 *Details:* ${message || 'N/A'}`
+      );
+      const waUrl = `https://wa.me/919791643450?text=${waText}`;
+
+      setTimeout(() => {
+        btn.textContent = 'Send Enquiry';
+        btn.disabled = false;
+        formSuccess.textContent = '✅ Enquiry sent! Opening WhatsApp to connect with K. Prasath...';
+        formSuccess.classList.add('show');
+        contactForm.reset();
+
+        window.open(waUrl, '_blank');
+        toast('✅ Enquiry recorded & WhatsApp opened!');
+
+        setTimeout(() => formSuccess.classList.remove('show'), 6000);
+      }, 700);
+
+    } catch (err) {
+      console.error('Enquiry error:', err);
+      btn.textContent = 'Send Enquiry';
+      btn.disabled = false;
+    }
   });
 }
 
@@ -818,5 +1168,6 @@ function toast(msg) {
    INIT
 ════════════════════════════════════════ */
 loadProjects();
+loadEnquiries();
 renderProjects();
 updateNav();

@@ -22,6 +22,7 @@
         Admin Mode &mdash; <strong>K. Prasath</strong>
       </span>
       <div class="ab-actions">
+        <button class="ab-btn ab-enquiries" id="adminEnquiriesBtn">💬 Enquiries (<span id="abEnquiriesCount">0</span>)</button>
         <button class="ab-btn" id="addProjectBtn">+ Add Project</button>
         <button class="ab-btn ab-out" id="adminLogout">Sign Out</button>
       </div>
@@ -726,21 +727,23 @@
           <textarea id="pDesc" rows="3" placeholder="Describe the project..." required></textarea>
         </div>
 
-        <!-- Image Upload -->
+        <!-- Image Upload (Multiple Images) -->
         <div class="form-group">
-          <label>Project Image</label>
+          <div class="multi-img-header">
+            <label>Project Images</label>
+            <span class="img-count-badge" id="imgCountBadge">0 images attached</span>
+          </div>
           <div class="img-upload-area" id="imgUploadArea">
-            <input type="file" id="pImage" accept="image/*" class="img-file-input" />
+            <input type="file" id="pImage" accept="image/*" multiple class="img-file-input" />
             <div class="img-upload-placeholder" id="imgPlaceholder">
-              <span>📷</span>
-              <span>Click or drag to upload image</span>
-              <span class="img-hint">JPG, PNG, WEBP — max 5MB</span>
-            </div>
-            <div class="img-preview-wrap" id="imgPreviewWrap" style="display:none;">
-              <img id="imgPreview" src="" alt="Preview" />
-              <button type="button" class="img-remove-btn" id="imgRemoveBtn">Remove ✕</button>
+              <span>📸</span>
+              <span>Click or drag to upload multiple images</span>
+              <span class="img-hint">JPG, PNG, WEBP — Select multiple photos at once</span>
             </div>
           </div>
+
+          <!-- Multi-Image Thumbnails Grid -->
+          <div class="multi-img-grid" id="multiImgGrid" style="display:none;"></div>
         </div>
 
         <p class="pm-form-error" id="pmError"></p>
@@ -775,13 +778,34 @@
   <div class="modal-overlay" id="viewModal">
     <div class="modal-box view-box">
       <button class="modal-x" id="closeViewModal">✕</button>
-      <div id="vmImgWrap" class="vm-img"></div>
+      <div id="vmGalleryWrap" class="vm-gallery-wrap">
+        <div id="vmImgWrap" class="vm-img-stage"></div>
+        <button type="button" class="vm-nav-btn vm-prev" id="vmPrevBtn" aria-label="Previous image">‹</button>
+        <button type="button" class="vm-nav-btn vm-next" id="vmNextBtn" aria-label="Next image">›</button>
+        <div class="vm-counter" id="vmCounter">1 / 1</div>
+        <span class="vm-kb-hint" id="vmKbHint">Use ← → keys</span>
+      </div>
+      <div class="vm-thumbs-bar" id="vmThumbsBar" style="display:none;"></div>
       <div class="vm-body">
         <span class="proj-cat-badge" id="vmCat"></span>
         <h2 id="vmTitle"></h2>
         <p id="vmDesc"></p>
         <div class="vm-meta" id="vmMeta"></div>
       </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       MODAL: ADMIN ENQUIRIES MANAGER
+  ════════════════════════════════════════ -->
+  <div class="modal-overlay" id="enquiriesModal">
+    <div class="modal-box enquiries-box">
+      <button class="modal-x" id="closeEnquiriesModal">✕</button>
+      <div class="em-header">
+        <h2 class="pm-title" style="margin-bottom:0; border:none; padding:0;">Client Enquiries</h2>
+        <span class="em-count-badge" id="emTotalBadge">0 Received</span>
+      </div>
+      <div class="enquiries-list" id="enquiriesList"></div>
     </div>
   </div>
 
