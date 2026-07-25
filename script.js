@@ -150,29 +150,9 @@ async function loadProjects() {
         .order('created_at', { ascending: false });
 
       if (!error && data) {
-        if (data.length > 0) {
-          projects = data.map(parseProjectImages);
-          renderProjects();
-          return;
-        } else {
-          // Seed default projects if database table is empty
-          for (const p of DEFAULT_PROJECTS) {
-            const seedImg = p.images && p.images.length > 1 ? JSON.stringify(p.images) : (p.image || (p.images ? p.images[0] : null));
-            await supabaseClient.from('projects').insert([{
-              id: p.id,
-              name: p.name,
-              category: p.category,
-              description: p.description,
-              location: p.location,
-              year: p.year,
-              client: p.client,
-              image: seedImg
-            }]);
-          }
-          projects = DEFAULT_PROJECTS.map(parseProjectImages);
-          renderProjects();
-          return;
-        }
+        projects = data.map(parseProjectImages);
+        renderProjects();
+        return;
       }
     } catch (e) {
       console.warn('Supabase fetch failed, fallback to local', e);
@@ -181,9 +161,8 @@ async function loadProjects() {
 
   try {
     const raw = localStorage.getItem('pkb_projects');
-    projects = raw ? JSON.parse(raw).map(parseProjectImages) : DEFAULT_PROJECTS.map(parseProjectImages);
-    if (!raw) saveProjects();
-  } catch { projects = DEFAULT_PROJECTS.map(parseProjectImages); }
+    projects = raw ? JSON.parse(raw).map(parseProjectImages) : [];
+  } catch { projects = []; }
   renderProjects();
 }
 
@@ -830,9 +809,21 @@ function openDeleteModal(id) {
   openModal(deleteModal);
 }
 cancelDelete.addEventListener('click', () => { closeModal(deleteModal); deleteId = null; });
+function extractSupabaseStoragePath(url) {
+  if (!url || typeof url !== 'string') return null;
+  const prefix = '/storage/v1/object/public/project-images/';
+  if (url.includes(prefix)) {
+    const parts = url.split(prefix);
+    return parts[1] ? decodeURIComponent(parts[1]) : null;
+  }
+  return null;
+}
+
 confirmDelete.addEventListener('click', async () => {
   if (!deleteId) return;
   const targetId = deleteId;
+  const targetProj = projects.find(p => p.id === targetId);
+
   projects = projects.filter(p => p.id !== targetId);
   saveProjects();
   closeModal(deleteModal);
@@ -841,8 +832,27 @@ confirmDelete.addEventListener('click', async () => {
   toast('🗑️ Project deleted.');
 
   if (supabaseClient) {
+    // Delete database entry
     const { error } = await supabaseClient.from('projects').delete().eq('id', targetId);
     if (error) console.error('Supabase delete error:', error);
+
+    // Delete associated uploaded images from Supabase Storage
+    if (targetProj) {
+      const imgList = (targetProj.images && targetProj.images.length > 0)
+        ? targetProj.images
+        : (targetProj.image ? [targetProj.image] : []);
+
+      const storageFilesToDelete = imgList
+        .map(extractSupabaseStoragePath)
+        .filter(Boolean);
+
+      if (storageFilesToDelete.length > 0) {
+        const { error: storageErr } = await supabaseClient.storage
+          .from('project-images')
+          .remove(storageFilesToDelete);
+        if (storageErr) console.error('Storage deletion error:', storageErr);
+      }
+    }
   }
 });
 
