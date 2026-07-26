@@ -1,27 +1,63 @@
 import React, { useState } from 'react';
 import { content } from '../data/content';
-import { Phone, Mail, MapPin, Clock, Send, CheckCircle2 } from 'lucide-react';
+import { Phone, Mail, MapPin, Clock, Send, CheckCircle2, AlertTriangle } from 'lucide-react';
 
 export default function Contact() {
   const { contact, business } = content;
-  const [formData, setFormData] = useState({ name: '', phone: '', message: '' });
+  const [formData, setFormData] = useState({ name: '', phone: '', message: '', website: '' });
+  const [errorMessage, setErrorMessage] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [lastSubmissionTime, setLastSubmissionTime] = useState(0);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!formData.name || !formData.phone) {
-      alert("Please fill in your Name and Phone Number.");
+    setErrorMessage('');
+
+    // 1. Honeypot check for bots
+    if (formData.website) {
+      // Quietly succeed for bot traffic
+      setIsSubmitted(true);
+      setFormData({ name: '', phone: '', message: '', website: '' });
+      return;
+    }
+
+    // 2. Client-side Rate Limiting (1 submission per 60 seconds)
+    const now = Date.now();
+    if (now - lastSubmissionTime < 60000) {
+      const waitSec = Math.ceil((60000 - (now - lastSubmissionTime)) / 1000);
+      setErrorMessage(`Please wait ${waitSec} seconds before submitting another enquiry.`);
+      return;
+    }
+
+    const rawName = formData.name.trim();
+    const rawPhone = formData.phone.trim();
+
+    // 3. Strict Input Validation
+    if (!rawName || rawName.length < 2 || rawName.length > 60) {
+      setErrorMessage('Please enter a valid name (2-60 characters).');
+      return;
+    }
+
+    const phoneRegex = /^(\+91[\-\s]?)?[6-9]\d{9}$|^(\+\d{1,3}[\-\s]?)?\d{7,14}$/;
+    if (!rawPhone || !phoneRegex.test(rawPhone.replace(/\s+/g, ''))) {
+      setErrorMessage('Please enter a valid 10-digit phone number.');
+      return;
+    }
+
+    if (formData.message.length > 1000) {
+      setErrorMessage('Message details must not exceed 1000 characters.');
       return;
     }
     
     setIsLoading(true);
-    // Simulate API request submission
+    setLastSubmissionTime(now);
+
     setTimeout(() => {
       setIsLoading(false);
       setIsSubmitted(true);
-      setFormData({ name: '', phone: '', message: '' });
-    }, 1200);
+      setFormData({ name: '', phone: '', message: '', website: '' });
+    }, 800);
   };
 
   const handleChange = (e) => {
@@ -124,6 +160,24 @@ export default function Contact() {
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-6">
+                  {/* Honeypot Input */}
+                  <div style={{ display: 'none' }} aria-hidden="true">
+                    <input
+                      type="text"
+                      name="website"
+                      tabIndex={-1}
+                      autoComplete="off"
+                      value={formData.website}
+                      onChange={handleChange}
+                    />
+                  </div>
+
+                  {errorMessage && (
+                    <div className="bg-red-500/10 border border-red-500/30 text-red-400 p-3 text-xs flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4 shrink-0" />
+                      <span>{errorMessage}</span>
+                    </div>
+                  )}
                   {/* Name field (Min height tap target 44px) */}
                   <div>
                     <label htmlFor="name" className="font-heading text-xs text-textLight tracking-wider uppercase block mb-2 font-semibold">

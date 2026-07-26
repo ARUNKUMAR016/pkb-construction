@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co https://images.unsplash.com; connect-src 'self' https://*.supabase.co; frame-ancestors 'none';" />
+  <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+  <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
   <title>PKB Kalai Construction | Building Better Homes For Better Tomorrow</title>
   <meta name="description" content="PKB Kalai Construction — Premium civil construction by K. Prasath B.E Civil. Residential, commercial & industrial projects across Tamil Nadu." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -578,6 +581,10 @@
       <div class="contact-right">
         <form class="contact-form" id="contactForm" novalidate>
           <h3 class="cf-title">Send an Enquiry</h3>
+          <!-- Honeypot Field for Bot Detection (hidden from humans) -->
+          <div style="display:none;" aria-hidden="true">
+            <input type="text" id="hp_website" name="website" tabindex="-1" autocomplete="off" />
+          </div>
           <div class="form-row">
             <div class="form-group">
               <label for="fname">Full Name</label>

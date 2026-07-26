@@ -87,6 +87,104 @@ async function sha256(str) {
   return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
+// XSS Sanitizer: Escape HTML characters
+function sanitizeHTML(str) {
+  if (!str || typeof str !== 'string') return '';
+  return str.replace(/[&<>"']/g, function(m) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m];
+  });
+}
+
+// Safe URL Sanitizer preventing javascript: / data: URI execution vectors
+function sanitizeURL(url) {
+  if (!url || typeof url !== 'string') return '';
+  const trimmed = url.trim();
+  if (/^(javascript|vbscript|data):/i.test(trimmed)) return '';
+  return trimmed;
+}
+
+// Rate Limiter Engine (Sliding Window)
+const SecurityRateLimiter = {
+  attempts: {},
+  check(key, limit = 5, windowMs = 600000) { // Default 5 attempts per 10 mins
+    const now = Date.now();
+    if (!this.attempts[key]) this.attempts[key] = [];
+    // Filter timestamps within window
+    this.attempts[key] = this.attempts[key].filter(timestamp => now - timestamp < windowMs);
+    if (this.attempts[key].length >= limit) {
+      const oldest = this.attempts[key][0];
+      const retryInSeconds = Math.ceil((windowMs - (now - oldest)) / 1000);
+      return { allowed: false, retryInSeconds };
+    }
+    return { allowed: true };
+  },
+  record(key) {
+    if (!this.attempts[key]) this.attempts[key] = [];
+    this.attempts[key].push(Date.now());
+  }
+};
+
+// Admin Login Lockout Manager
+const LoginLockoutManager = {
+  failedAttempts: 0,
+  lockoutUntil: 0,
+  maxFailures: 5,
+  lockoutDurationMs: 15 * 60 * 1000, // 15 minutes lockout
+
+  isLockedOut() {
+    const now = Date.now();
+    if (this.lockoutUntil > now) {
+      const remainingSec = Math.ceil((this.lockoutUntil - now) / 1000);
+      return { locked: true, remainingSec };
+    }
+    if (this.lockoutUntil !== 0 && this.lockoutUntil <= now) {
+      // Reset lockout after expiry
+      this.lockoutUntil = 0;
+      this.failedAttempts = 0;
+    }
+    return { locked: false };
+  },
+  recordFailedAttempt() {
+    this.failedAttempts += 1;
+    if (this.failedAttempts >= this.maxFailures) {
+      this.lockoutUntil = Date.now() + this.lockoutDurationMs;
+    }
+  },
+  reset() {
+    this.failedAttempts = 0;
+    this.lockoutUntil = 0;
+  }
+};
+
+// Binary File Header Magic-Byte Verification (PNG, JPEG, WEBP)
+async function validateImageFileMagicBytes(file) {
+  if (!file) return false;
+  // Maximum file size 5MB
+  if (file.size > 5 * 1024 * 1024) return false;
+
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onloadend = (e) => {
+      if (!e.target || e.target.readyState !== FileReader.DONE) {
+        resolve(false);
+        return;
+      }
+      const arr = new Uint8Array(e.target.result);
+      if (arr.length < 4) { resolve(false); return; }
+
+      // JPEG magic: FF D8 FF
+      const isJpeg = arr[0] === 0xFF && arr[1] === 0xD8 && arr[2] === 0xFF;
+      // PNG magic: 89 50 4E 47
+      const isPng = arr[0] === 0x89 && arr[1] === 0x50 && arr[2] === 0x4E && arr[3] === 0x47;
+      // WebP magic: 52 49 46 46 (RIFF) ... 57 45 42 50 (WEBP)
+      const isRiff = arr[0] === 0x52 && arr[1] === 0x49 && arr[2] === 0x46 && arr[3] === 0x46;
+
+      resolve(isJpeg || isPng || isRiff);
+    };
+    reader.readAsArrayBuffer(file.slice(0, 12));
+  });
+}
+
 /* ─── SUPABASE CLIENT ─── */
 const SUPABASE_URL = 'https://cqkbkemsiszkbziqiwni.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxa2JrZW1zaXN6a2J6aXFpd25pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4ODE5MzMsImV4cCI6MjEwMDQ1NzkzM30.phw_G0FXzhGmfse5ffEXav-YRRxoNNjWv8_O2Z7DXzE';
@@ -467,6 +565,24 @@ pwToggle.addEventListener('click', () => {
 loginForm.addEventListener('submit', async e => {
   e.preventDefault();
   loginError.classList.remove('show');
+
+  // Check anti-brute-force lockout state
+  const lockoutStatus = LoginLockoutManager.isLockedOut();
+  if (lockoutStatus.locked) {
+    loginError.textContent = `🔒 Account locked out due to too many failed attempts. Try again in ${lockoutStatus.remainingSec}s.`;
+    loginError.classList.add('show');
+    return;
+  }
+
+  // Rate Limiting check
+  const rateCheck = SecurityRateLimiter.check('admin_login', 5, 300000); // 5 attempts per 5 mins
+  if (!rateCheck.allowed) {
+    loginError.textContent = `⚠️ Too many login attempts. Please wait ${rateCheck.retryInSeconds} seconds.`;
+    loginError.classList.add('show');
+    return;
+  }
+
+  SecurityRateLimiter.record('admin_login');
   loginBtn.textContent = 'Signing in…';
   loginBtn.disabled = true;
 
@@ -474,11 +590,12 @@ loginForm.addEventListener('submit', async e => {
     const inputUserHash = await sha256(loginUser.value.trim());
     const inputPassHash = await sha256(loginPass.value);
 
-    // Artificial delay to prevent brute-force timing attacks and preserve transition
+    // Artificial delay to prevent brute-force timing attacks
     await new Promise(resolve => setTimeout(resolve, 650));
 
     if (inputUserHash === HASHED_USER && inputPassHash === HASHED_PASS) {
       isAdmin = true;
+      LoginLockoutManager.reset();
       closeModal(loginModal);
       adminBar.classList.add('show');
       navbar.classList.add('admin-active');
@@ -487,11 +604,19 @@ loginForm.addEventListener('submit', async e => {
       renderProjects();
       toast('✅ Welcome back, K. Prasath!');
     } else {
+      LoginLockoutManager.recordFailedAttempt();
+      const checkLock = LoginLockoutManager.isLockedOut();
+      if (checkLock.locked) {
+        loginError.textContent = `🔒 Too many failed attempts. Account locked for 15 minutes.`;
+      } else {
+        loginError.textContent = `Invalid credentials. ${LoginLockoutManager.maxFailures - LoginLockoutManager.failedAttempts} attempt(s) remaining.`;
+      }
       loginError.classList.add('show');
       loginPass.value = '';
     }
   } catch (err) {
     console.error('Security verification error:', err);
+    loginError.textContent = 'An error occurred during verification.';
     loginError.classList.add('show');
   } finally {
     loginBtn.textContent = 'Sign In';
@@ -700,12 +825,35 @@ projectForm.addEventListener('submit', async e => {
   e.preventDefault();
   pmError.textContent = '';
 
-  const name     = pName.value.trim();
-  const category = pCategory.value;
-  const desc     = pDesc.value.trim();
-  if (!name)     { pmError.textContent = '⚠️ Project name is required.'; return; }
-  if (!category) { pmError.textContent = '⚠️ Please select a category.'; return; }
-  if (!desc)     { pmError.textContent = '⚠️ Description is required.'; return; }
+  // Auth Guard
+  if (!isAdmin) {
+    pmError.textContent = '🔒 Unauthorized: You must be logged in as Admin to manage projects.';
+    return;
+  }
+
+  const rawName     = pName.value.trim();
+  const rawCategory = pCategory.value;
+  const rawDesc     = pDesc.value.trim();
+  const rawLocation = pLocation.value.trim();
+  const rawYear     = pYear.value.trim();
+  const rawClient   = pClient.value.trim();
+
+  if (!rawName || rawName.length < 3 || rawName.length > 100) {
+    pmError.textContent = '⚠️ Project name must be between 3 and 100 characters.';
+    return;
+  }
+  if (!rawCategory) { pmError.textContent = '⚠️ Please select a valid category.'; return; }
+  if (!rawDesc || rawDesc.length < 5 || rawDesc.length > 2000) {
+    pmError.textContent = '⚠️ Description must be between 5 and 2000 characters.';
+    return;
+  }
+
+  const name     = sanitizeHTML(rawName);
+  const category = sanitizeHTML(rawCategory);
+  const desc     = sanitizeHTML(rawDesc);
+  const location = sanitizeHTML(rawLocation);
+  const year     = sanitizeHTML(rawYear);
+  const client   = sanitizeHTML(rawClient);
 
   saveProjectBtn.textContent = 'Saving…';
   saveProjectBtn.disabled = true;
@@ -949,17 +1097,22 @@ closeViewModal.addEventListener('click', () => closeModal(viewModal));
 /* ════════════════════════════════════════
    MULTI-IMAGE UPLOAD SELECTION & DRAG-DROP
 ════════════════════════════════════════ */
-function handleImageFilesSelect(files) {
+async function handleImageFilesSelect(files) {
   if (!files || !files.length) return;
   pmError.textContent = '';
   const fileArray = Array.from(files);
 
-  fileArray.forEach(file => {
-    if (!file.type.startsWith('image/')) return;
-    if (file.size > 10 * 1024 * 1024) {
-      pmError.textContent = '⚠️ Some photos exceed 10MB limit.';
-      return;
+  for (const file of fileArray) {
+    if (!file.type || !file.type.startsWith('image/')) {
+      pmError.textContent = '⚠️ Invalid file type. Only JPEG, PNG, and WebP images are allowed.';
+      continue;
     }
+    const isValidImage = await validateImageFileMagicBytes(file);
+    if (!isValidImage) {
+      pmError.textContent = `⚠️ Security alert: File "${sanitizeHTML(file.name)}" failed magic-byte validation or exceeds 5MB limit.`;
+      continue;
+    }
+
     const r = new FileReader();
     r.onload = ev => {
       modalImages.push({
@@ -970,7 +1123,7 @@ function handleImageFilesSelect(files) {
       renderModalThumbnails();
     };
     r.readAsDataURL(file);
-  });
+  }
 }
 
 pImage.addEventListener('change', e => {
@@ -1120,6 +1273,24 @@ if (contactForm) {
   contactForm.addEventListener('submit', async e => {
     e.preventDefault();
 
+    // 1. Honeypot Anti-Spam Check
+    const hpField = $('hp_website');
+    if (hpField && hpField.value) {
+      console.warn('Bot detected via honeypot field submission');
+      // Silently pretend to succeed to throw off automated bots
+      contactForm.reset();
+      formSuccess.textContent = '✅ Enquiry received!';
+      formSuccess.classList.add('show');
+      return;
+    }
+
+    // 2. Rate Limiting Check (Max 3 submissions per 10 mins)
+    const rateCheck = SecurityRateLimiter.check('contact_enquiry', 3, 600000);
+    if (!rateCheck.allowed) {
+      alert(`⚠️ Rate limit reached: Please wait ${rateCheck.retryInSeconds} seconds before sending another enquiry.`);
+      return;
+    }
+
     const nameEl    = $('fname');
     const phoneEl   = $('fphone');
     const emailEl   = $('femail');
@@ -1127,17 +1298,51 @@ if (contactForm) {
     const msgEl     = $('fmsg');
     const btn       = $('submitBtn');
 
-    const name    = nameEl ? nameEl.value.trim() : '';
-    const phone   = phoneEl ? phoneEl.value.trim() : '';
-    const email   = emailEl ? emailEl.value.trim() : '';
-    const service = serviceEl ? serviceEl.value : '';
-    const message = msgEl ? msgEl.value.trim() : '';
+    const rawName    = nameEl ? nameEl.value.trim() : '';
+    const rawPhone   = phoneEl ? phoneEl.value.trim() : '';
+    const rawEmail   = emailEl ? emailEl.value.trim() : '';
+    const rawService = serviceEl ? serviceEl.value : '';
+    const rawMessage = msgEl ? msgEl.value.trim() : '';
 
-    if (!name || !phone) {
-      alert('Please fill in your Full Name and Phone Number.');
+    // 3. Strict Input Validation
+    if (!rawName || rawName.length < 2 || rawName.length > 60) {
+      alert('Please enter a valid Full Name (2 to 60 characters).');
+      if (nameEl) nameEl.focus();
       return;
     }
 
+    // Phone validation regex (accepts Indian & International standard phone formats)
+    const phoneRegex = /^(\+91[\-\s]?)?[6-9]\d{9}$|^(\+\d{1,3}[\-\s]?)?\d{7,14}$/;
+    if (!rawPhone || !phoneRegex.test(rawPhone.replace(/\s+/g, ''))) {
+      alert('Please enter a valid 10-digit Phone Number (e.g. 9791643450 or +91 9791643450).');
+      if (phoneEl) phoneEl.focus();
+      return;
+    }
+
+    // Email validation regex if provided
+    if (rawEmail) {
+      const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+      if (!emailRegex.test(rawEmail) || rawEmail.length > 100) {
+        alert('Please enter a valid email address.');
+        if (emailEl) emailEl.focus();
+        return;
+      }
+    }
+
+    if (rawMessage.length > 1000) {
+      alert('Message description is too long (maximum 1000 characters).');
+      if (msgEl) msgEl.focus();
+      return;
+    }
+
+    // Sanitized inputs for DB / Local storage
+    const name    = sanitizeHTML(rawName);
+    const phone   = sanitizeHTML(rawPhone);
+    const email   = sanitizeHTML(rawEmail);
+    const service = sanitizeHTML(rawService);
+    const message = sanitizeHTML(rawMessage);
+
+    SecurityRateLimiter.record('contact_enquiry');
     btn.textContent = 'Sending Enquiry…';
     btn.disabled = true;
 
@@ -1180,6 +1385,7 @@ if (contactForm) {
 
     } catch (err) {
       console.error('Enquiry error:', err);
+      alert('An error occurred while saving your enquiry. Please try again.');
       btn.textContent = 'Send Enquiry';
       btn.disabled = false;
     }
