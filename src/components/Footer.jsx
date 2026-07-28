@@ -93,8 +93,10 @@ export default function Footer() {
       <div className="bg-secondary border-t border-panel py-6">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           
-          <div className="text-[10px] md:text-xs font-heading font-medium tracking-widest text-textMuted uppercase text-center sm:text-left">
-            &copy; {currentYear} {business.name}. All Rights Reserved. &bull; Designed for Heavy Construction.
+          <div className="text-[10px] md:text-xs font-heading font-medium tracking-widest text-textMuted uppercase text-center sm:text-left flex flex-wrap items-center gap-2">
+            <span>&copy; {currentYear} {business.name}. All Rights Reserved.</span>
+            <span>&bull;</span>
+            <span>Designed &amp; Developed by <a href="https://wa.me/918838977710?text=Hi%20Arun%2C%20I%20saw%20your%20work%20on%20PKB%20Construction%20website" target="_blank" rel="noopener noreferrer" className="text-accent font-bold hover:underline" title="Chat on WhatsApp">arunkumarveerapandian4@gmail.com</a></span>
           </div>
 
           {/* Scroll to Top (tap target >= 44px) */}

@@ -95,16 +95,21 @@ export default function Hero() {
             variants={itemVariants}
             className="grid grid-cols-3 border-l-2 border-accent/40 pl-6 gap-6 md:gap-12"
           >
-            {hero.stats.map((stat, idx) => (
-              <div key={idx}>
-                <div className="font-heading text-2xl md:text-4xl font-bold text-accent">
-                  {stat.value}
+            {hero.stats.map((stat, idx) => {
+              const displayVal = stat.label.toLowerCase().includes('project')
+                ? `${images.gallery.length}+`
+                : stat.value;
+              return (
+                <div key={idx}>
+                  <div className="font-heading text-2xl md:text-4xl font-bold text-accent">
+                    {displayVal}
+                  </div>
+                  <div className="font-heading text-[10px] md:text-xs text-textMuted tracking-wider uppercase mt-1">
+                    {stat.label}
+                  </div>
                 </div>
-                <div className="font-heading text-[10px] md:text-xs text-textMuted tracking-wider uppercase mt-1">
-                  {stat.label}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </motion.div>
         </motion.div>
       </div>

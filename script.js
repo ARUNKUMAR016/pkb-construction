@@ -3,6 +3,12 @@
    ============================================================ */
 'use strict';
 
+console.log(
+  '%c ⚡ Designed & Developed by Arun Kumar %c https://github.com/ARUNKUMAR016 ',
+  'background: #d97706; color: #000; font-weight: bold; font-size: 12px; padding: 4px 8px; border-radius: 4px 0 0 4px;',
+  'background: #1e293b; color: #fbbf24; font-size: 12px; padding: 4px 8px; border-radius: 0 4px 4px 0;'
+);
+
 /* ─── DEFAULT PROJECTS ─── */
 const DEFAULT_PROJECTS = [
   {
@@ -480,14 +486,34 @@ startSlideshow();
 
 // Stats counter
 function animateCount(el) {
-  const target = +el.dataset.target;
+  const target = +el.dataset.target || 0;
+  if (target === 0) {
+    el.textContent = '0';
+    return;
+  }
   let cur = 0; 
-  const step = target / 72;
+  const step = Math.max(1, Math.ceil(target / 40));
   const t = setInterval(() => {
     cur = Math.min(cur + step, target);
     el.textContent = Math.floor(cur);
-    if (cur >= target) clearInterval(t);
-  }, 18);
+    if (cur >= target) {
+      el.textContent = target;
+      clearInterval(t);
+    }
+  }, 25);
+}
+
+function updateHeroProjectCount() {
+  const countEl = document.getElementById('heroProjectCount') || document.querySelector('.hcsb-item .hcsb-num');
+  if (!countEl) return;
+  const count = Array.isArray(projects) ? projects.length : 0;
+  countEl.dataset.target = count;
+  
+  if (countEl.dataset.done) {
+    animateCount(countEl);
+  } else {
+    countEl.textContent = count;
+  }
 }
 
 const statsObserver = new IntersectionObserver(entries => {
@@ -639,6 +665,7 @@ adminLogout.addEventListener('click', logoutAdmin);
    RENDER PROJECTS
 ════════════════════════════════════════ */
 function renderProjects(filter) {
+  updateHeroProjectCount();
   if (filter !== undefined) activeFilter = filter;
   projectsGrid.innerHTML = '';
 
