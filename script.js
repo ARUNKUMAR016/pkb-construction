@@ -519,17 +519,9 @@ function animateCount(el) {
   }, 25);
 }
 
+// Helper to update hero project count (no-op: stats are managed statically by admin stats editor)
 function updateHeroProjectCount() {
-  const countEl = document.getElementById('heroProjectCount') || document.querySelector('.hcsb-item .hcsb-num');
-  if (!countEl) return;
-  const count = Array.isArray(projects) ? projects.length : 0;
-  countEl.dataset.target = count;
-  
-  if (countEl.dataset.done) {
-    animateCount(countEl);
-  } else {
-    countEl.textContent = count;
-  }
+  // Stat 1 is managed statically by Admin via statsData
 }
 
 const statsObserver = new IntersectionObserver(entries => {
@@ -1067,7 +1059,6 @@ adminLogout.addEventListener('click', logoutAdmin);
    RENDER PROJECTS
 ════════════════════════════════════════ */
 function renderProjects(filter) {
-  updateHeroProjectCount();
   if (filter !== undefined) activeFilter = filter;
   projectsGrid.innerHTML = '';
 
