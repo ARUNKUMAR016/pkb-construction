@@ -364,6 +364,22 @@ const abEnquiriesCount    = $('abEnquiriesCount');
 const emTotalBadge        = $('emTotalBadge');
 const enquiriesList       = $('enquiriesList');
 
+const statsModal          = $('statsModal');
+const closeStatsModal     = $('closeStatsModal');
+const adminEditStatsBtn   = $('adminEditStatsBtn');
+const statsBarEditBtn     = $('statsBarEditBtn');
+const statsForm           = $('statsForm');
+const resetStatsBtn       = $('resetStatsBtn');
+
+const visitorLogsModal      = $('visitorLogsModal');
+const closeVisitorLogsModal = $('closeVisitorLogsModal');
+const adminVisitorLogsBtn   = $('adminVisitorLogsBtn');
+const vlSearchInput         = $('vlSearchInput');
+const vlFilterDevice        = $('vlFilterDevice');
+const vlRefreshBtn          = $('vlRefreshBtn');
+const vlExportBtn           = $('vlExportBtn');
+const vlClearBtn            = $('vlClearBtn');
+
 const projectsGrid    = $('projectsGrid');
 const projEmpty       = $('projEmpty');
 const contactForm     = $('contactForm');
@@ -372,15 +388,15 @@ const formSuccess     = $('formSuccess');
 /* ════════════════════════════════════════
    MODAL HELPERS
 ════════════════════════════════════════ */
-function openModal(el)  { el.classList.add('open'); document.body.classList.add('modal-open'); document.body.style.overflow = 'hidden'; }
-function closeModal(el) { el.classList.remove('open'); document.body.classList.remove('modal-open'); document.body.style.overflow = ''; }
+function openModal(el)  { if (el) { el.classList.add('open'); document.body.classList.add('modal-open'); document.body.style.overflow = 'hidden'; } }
+function closeModal(el) { if (el) { el.classList.remove('open'); document.body.classList.remove('modal-open'); document.body.style.overflow = ''; } }
 
-[loginModal, projectModal, deleteModal, viewModal].forEach(m =>
-  m.addEventListener('click', e => { if (e.target === m) closeModal(m); })
-);
+[loginModal, projectModal, deleteModal, viewModal, enquiriesModal, statsModal, visitorLogsModal].forEach(m => {
+  if (m) m.addEventListener('click', e => { if (e.target === m) closeModal(m); });
+});
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape')
-    [loginModal, projectModal, deleteModal, viewModal].forEach(closeModal);
+    [loginModal, projectModal, deleteModal, viewModal, enquiriesModal, statsModal, visitorLogsModal].forEach(m => { if (m) closeModal(m); });
 });
 
 /* ════════════════════════════════════════
@@ -532,6 +548,392 @@ const statsObserver = new IntersectionObserver(entries => {
 
 const statsBar = document.querySelector('.hc-stats-bar');
 if (statsBar) statsObserver.observe(statsBar);
+
+/* ════════════════════════════════════════
+   ADMIN EDIT STATS MANAGEMENT
+════════════════════════════════════════ */
+const DEFAULT_STATS_DATA = [
+  { id: 'stat1', num: 10, suffix: '+', label: 'Projects Done' },
+  { id: 'stat2', num: 10, suffix: '+', label: 'Years Experience' },
+  { id: 'stat3', num: 50, suffix: 'K+', label: 'Sq. Ft. Built' },
+  { id: 'stat4', num: 100, suffix: '%', label: 'Client Satisfaction' }
+];
+let statsData = [...DEFAULT_STATS_DATA];
+
+function loadStats() {
+  try {
+    const raw = localStorage.getItem('pkb_stats_data');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length === 4) {
+        statsData = parsed;
+      }
+    }
+  } catch (e) {
+    statsData = [...DEFAULT_STATS_DATA];
+  }
+  renderStats();
+}
+
+function renderStats() {
+  statsData.forEach((stat, idx) => {
+    const i = idx + 1;
+    const numEl = $(`statNum${i}`);
+    const sufEl = $(`statSuffix${i}`);
+    const lblEl = $(`statLabel${i}`);
+
+    if (numEl) {
+      numEl.dataset.target = stat.num;
+      if (numEl.dataset.done) {
+        animateCount(numEl);
+      } else {
+        numEl.textContent = stat.num;
+      }
+    }
+    if (sufEl) sufEl.textContent = stat.suffix;
+    if (lblEl) lblEl.textContent = stat.label;
+  });
+}
+
+function saveStats(newStats) {
+  statsData = newStats;
+  try {
+    localStorage.setItem('pkb_stats_data', JSON.stringify(statsData));
+  } catch (e) {}
+
+  if (supabaseClient) {
+    try {
+      supabaseClient.from('site_stats').upsert({ id: 1, data: statsData }).catch(() => {});
+    } catch (e) {}
+  }
+
+  renderStats();
+  document.querySelectorAll('.hcsb-num').forEach(el => animateCount(el));
+  toast('Stats counter updated successfully!');
+}
+
+function openStatsEditor() {
+  if (!isAdmin) {
+    toast('🔒 Admin access required. Please sign in as Admin.');
+    return;
+  }
+  statsData.forEach((stat, idx) => {
+    const i = idx + 1;
+    const labelInput = $(`stLabel${i}`);
+    const numInput = $(`stNum${i}`);
+    const suffixInput = $(`stSuffix${i}`);
+    if (labelInput) labelInput.value = stat.label || '';
+    if (numInput) numInput.value = stat.num !== undefined ? stat.num : 0;
+    if (suffixInput) suffixInput.value = stat.suffix || '';
+  });
+  openModal(statsModal);
+}
+
+if (adminEditStatsBtn) adminEditStatsBtn.addEventListener('click', openStatsEditor);
+if (statsBarEditBtn) statsBarEditBtn.addEventListener('click', openStatsEditor);
+if (closeStatsModal) closeStatsModal.addEventListener('click', () => closeModal(statsModal));
+
+if (statsForm) {
+  statsForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const updated = [1, 2, 3, 4].map(i => ({
+      id: `stat${i}`,
+      label: sanitizeHTML(($(`stLabel${i}`)?.value || '').trim()),
+      num: parseInt($(`stNum${i}`)?.value, 10) || 0,
+      suffix: sanitizeHTML(($(`stSuffix${i}`)?.value || '').trim())
+    }));
+    saveStats(updated);
+    closeModal(statsModal);
+  });
+}
+
+if (resetStatsBtn) {
+  resetStatsBtn.addEventListener('click', () => {
+    if (confirm('Reset stats counter to default values?')) {
+      saveStats([...DEFAULT_STATS_DATA]);
+      openStatsEditor();
+    }
+  });
+}
+
+/* ════════════════════════════════════════
+   SERVER ACCESS LOG & VISITOR TRACKER
+════════════════════════════════════════ */
+let visitorLogs = [];
+
+function getVisitorId() {
+  let vid = localStorage.getItem('pkb_visitor_id');
+  if (!vid) {
+    vid = 'v_' + Math.random().toString(36).substring(2, 9) + Date.now().toString(36);
+    localStorage.setItem('pkb_visitor_id', vid);
+  }
+  return vid;
+}
+
+function parseDevice(ua) {
+  let os = 'Windows';
+  let browser = 'Chrome';
+  let device = 'Desktop';
+
+  if (!ua) return { os, browser, device };
+
+  if (/mobile/i.test(ua)) device = 'Mobile';
+  else if (/tablet|ipad/i.test(ua)) device = 'Tablet';
+
+  if (/windows/i.test(ua)) os = 'Windows';
+  else if (/macintosh|mac os/i.test(ua)) os = 'macOS';
+  else if (/android/i.test(ua)) os = 'Android';
+  else if (/iphone|ipad|ipod/i.test(ua)) os = 'iOS';
+  else if (/linux/i.test(ua)) os = 'Linux';
+
+  if (/edg/i.test(ua)) browser = 'Edge';
+  else if (/chrome/i.test(ua)) browser = 'Chrome';
+  else if (/firefox/i.test(ua)) browser = 'Firefox';
+  else if (/safari/i.test(ua) && !/chrome/i.test(ua)) browser = 'Safari';
+  else if (/opera|opr/i.test(ua)) browser = 'Opera';
+
+  return { os, browser, device };
+}
+
+async function recordVisitorLog() {
+  const vid = getVisitorId();
+  const isNew = !localStorage.getItem('pkb_has_visited_before');
+  localStorage.setItem('pkb_has_visited_before', '1');
+
+  const { os, browser, device } = parseDevice(navigator.userAgent || '');
+  const path = window.location.pathname + window.location.hash || '/';
+
+  let ipInfo = { ip: '127.0.0.1 (Client)', city: '', country: '' };
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 2000);
+    const res = await fetch('https://api.ipify.org?format=json', { signal: controller.signal });
+    clearTimeout(timeoutId);
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.ip) {
+        ipInfo.ip = data.ip;
+      }
+    }
+  } catch (e) {
+    // Graceful fallback
+  }
+
+  const newLog = {
+    id: 'log_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+    visitorId: vid,
+    ip: ipInfo.ip,
+    city: ipInfo.city,
+    country: ipInfo.country,
+    os,
+    browser,
+    device,
+    path,
+    timestamp: new Date().toISOString(),
+    isNew
+  };
+
+  try {
+    const raw = localStorage.getItem('pkb_visitor_logs');
+    visitorLogs = raw ? JSON.parse(raw) : [];
+  } catch (e) { visitorLogs = []; }
+
+  visitorLogs.unshift(newLog);
+  if (visitorLogs.length > 200) visitorLogs = visitorLogs.slice(0, 200);
+
+  try {
+    localStorage.setItem('pkb_visitor_logs', JSON.stringify(visitorLogs));
+  } catch (e) {}
+
+  if (supabaseClient) {
+    try {
+      supabaseClient.from('visitor_logs').insert([newLog]).catch(() => {});
+    } catch (e) {}
+  }
+
+  updateVisitorCountBadge();
+}
+
+function loadVisitorLogs() {
+  try {
+    const raw = localStorage.getItem('pkb_visitor_logs');
+    visitorLogs = raw ? JSON.parse(raw) : [];
+  } catch (e) { visitorLogs = []; }
+  updateVisitorCountBadge();
+}
+
+function updateVisitorCountBadge() {
+  const abVisitorsCount = $('abVisitorsCount');
+  if (abVisitorsCount) {
+    abVisitorsCount.textContent = visitorLogs.length;
+  }
+}
+
+function formatRelativeTime(isoStr) {
+  const date = new Date(isoStr);
+  const diffSec = Math.floor((Date.now() - date.getTime()) / 1000);
+  if (diffSec < 60) return 'Just now';
+  if (diffSec < 3600) return `${Math.floor(diffSec / 60)}m ago`;
+  if (diffSec < 86400) return `${Math.floor(diffSec / 3600)}h ago`;
+  return `${Math.floor(diffSec / 86400)}d ago`;
+}
+
+function renderVisitorLogs(searchTerm = '', deviceFilter = 'all') {
+  loadVisitorLogs();
+
+  const listContainer     = $('visitorLogsList');
+  const vlTotalBadge      = $('vlTotalBadge');
+  const kpiTotalVisits    = $('kpiTotalVisits');
+  const kpiUniqueVisitors = $('kpiUniqueVisitors');
+  const kpiTodayVisits    = $('kpiTodayVisits');
+  const kpiTopDevice      = $('kpiTopDevice');
+
+  const s = searchTerm.toLowerCase().trim();
+  const filtered = visitorLogs.filter(log => {
+    const matchDevice = deviceFilter === 'all' || log.device === deviceFilter;
+    const matchSearch = !s || 
+      (log.ip && log.ip.toLowerCase().includes(s)) ||
+      (log.os && log.os.toLowerCase().includes(s)) ||
+      (log.browser && log.browser.toLowerCase().includes(s)) ||
+      (log.city && log.city.toLowerCase().includes(s)) ||
+      (log.country && log.country.toLowerCase().includes(s)) ||
+      (log.path && log.path.toLowerCase().includes(s));
+    return matchDevice && matchSearch;
+  });
+
+  const total = visitorLogs.length;
+  const uniqueIPs = new Set(visitorLogs.map(l => l.ip)).size;
+  const todayStr = new Date().toISOString().split('T')[0];
+  const todayVisits = visitorLogs.filter(l => l.timestamp && l.timestamp.startsWith(todayStr)).length;
+
+  const deviceCounts = visitorLogs.reduce((acc, l) => {
+    acc[l.device] = (acc[l.device] || 0) + 1;
+    return acc;
+  }, {});
+  let topDevice = 'Desktop';
+  let maxCount = 0;
+  Object.keys(deviceCounts).forEach(d => {
+    if (deviceCounts[d] > maxCount) {
+      maxCount = deviceCounts[d];
+      topDevice = d;
+    }
+  });
+
+  if (kpiTotalVisits) kpiTotalVisits.textContent = total;
+  if (kpiUniqueVisitors) kpiUniqueVisitors.textContent = uniqueIPs;
+  if (kpiTodayVisits) kpiTodayVisits.textContent = todayVisits;
+  if (kpiTopDevice) kpiTopDevice.textContent = topDevice;
+  if (vlTotalBadge) vlTotalBadge.textContent = `${filtered.length} Displayed`;
+
+  if (!listContainer) return;
+
+  if (filtered.length === 0) {
+    listContainer.innerHTML = '<div class="logs-empty">No visitor access logs found matching criteria.</div>';
+    return;
+  }
+
+  listContainer.innerHTML = filtered.map(log => {
+    const dateObj = new Date(log.timestamp);
+    const timeStr = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const dateStr = dateObj.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+    const relTime = formatRelativeTime(log.timestamp);
+
+    const devIcon = log.device === 'Mobile' ? '📱' : log.device === 'Tablet' ? '📑' : '💻';
+    const typeBadge = log.isNew
+      ? '<span class="badge-type-new">🟢 New</span>'
+      : '<span class="badge-type-returning">🔵 Returning</span>';
+
+    const locationText = log.city || log.country ? `${log.city}${log.city && log.country ? ', ' : ''}${log.country}` : 'Tamil Nadu, IN';
+
+    return `
+      <div class="log-row">
+        <div class="col-ip">
+          <span class="badge-ip">⚡ ${sanitizeHTML(log.ip)}</span>
+          <span class="badge-geo">📍 ${sanitizeHTML(locationText)}</span>
+        </div>
+        <div class="col-time">
+          <div>${dateStr} ${timeStr}</div>
+          <div class="time-ago">${relTime}</div>
+        </div>
+        <div class="col-device">
+          <span>${devIcon}</span>
+          <span>${sanitizeHTML(log.device)} &bull; ${sanitizeHTML(log.browser)} (${sanitizeHTML(log.os)})</span>
+        </div>
+        <div class="col-path">
+          <span>${sanitizeHTML(log.path)}</span>
+        </div>
+        <div class="col-status">
+          ${typeBadge}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function openVisitorLogsManager() {
+  if (!isAdmin) {
+    toast('🔒 Admin access required. Please sign in as Admin.');
+    return;
+  }
+  renderVisitorLogs(vlSearchInput?.value || '', vlFilterDevice?.value || 'all');
+  openModal(visitorLogsModal);
+}
+
+if (adminVisitorLogsBtn) adminVisitorLogsBtn.addEventListener('click', openVisitorLogsManager);
+if (closeVisitorLogsModal) closeVisitorLogsModal.addEventListener('click', () => closeModal(visitorLogsModal));
+
+if (vlSearchInput) {
+  vlSearchInput.addEventListener('input', () => {
+    renderVisitorLogs(vlSearchInput.value, vlFilterDevice?.value || 'all');
+  });
+}
+
+if (vlFilterDevice) {
+  vlFilterDevice.addEventListener('change', () => {
+    renderVisitorLogs(vlSearchInput?.value || '', vlFilterDevice.value);
+  });
+}
+
+if (vlRefreshBtn) {
+  vlRefreshBtn.addEventListener('click', () => {
+    renderVisitorLogs(vlSearchInput?.value || '', vlFilterDevice?.value || 'all');
+    toast('Access logs refreshed');
+  });
+}
+
+if (vlExportBtn) {
+  vlExportBtn.addEventListener('click', () => {
+    if (visitorLogs.length === 0) {
+      toast('No logs to export');
+      return;
+    }
+    const headers = ['ID', 'IP Address', 'Device', 'OS', 'Browser', 'Location', 'Path', 'Timestamp', 'Is New'];
+    const rows = visitorLogs.map(l => [
+      l.id, l.ip, l.device, l.os, l.browser, `${l.city} ${l.country}`.trim(), l.path, l.timestamp, l.isNew ? 'Yes' : 'No'
+    ]);
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.map(x => `"${x}"`).join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `pkb_visitor_logs_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast('Visitor logs CSV downloaded!');
+  });
+}
+
+if (vlClearBtn) {
+  vlClearBtn.addEventListener('click', () => {
+    if (confirm('Are you sure you want to clear all server access logs?')) {
+      visitorLogs = [];
+      try { localStorage.removeItem('pkb_visitor_logs'); } catch (e) {}
+      renderVisitorLogs();
+      toast('All access logs cleared.');
+    }
+  });
+}
 
 /* ════════════════════════════════════════
    SECTORS SHOWCASE TABS
@@ -1448,5 +1850,7 @@ function toast(msg) {
 ════════════════════════════════════════ */
 loadProjects();
 loadEnquiries();
+loadStats();
+recordVisitorLog();
 renderProjects();
 updateNav();
