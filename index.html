@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co https://images.unsplash.com; connect-src 'self' https://*.supabase.co; frame-ancestors 'none';" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co https://images.unsplash.com; connect-src 'self' https://*.supabase.co https://api.ipify.org https://ipapi.co https://api.db-ip.com https://ip-api.com https://*.ipify.org; frame-ancestors 'none';" />
   <meta http-equiv="X-Content-Type-Options" content="nosniff" />
   <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
   <title>PKB Kalai Construction | Building Better Homes For Better Tomorrow</title>
@@ -757,6 +757,14 @@
           <div class="form-group">
             <label for="fmsg">Project Details</label>
             <textarea id="fmsg" rows="4" placeholder="Describe your project..."></textarea>
+          </div>
+          <!-- Math CAPTCHA Anti-Spam Challenge -->
+          <div class="form-group" style="margin-top: 8px;">
+            <label for="fcaptcha" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <span>Security Verification <span style="color:#e05c10">*</span></span>
+              <span id="captchaText" style="font-weight:700; color:#e05c10; background:rgba(224,92,16,0.15); padding:3px 10px; border-radius:4px; font-size:0.85rem;">Math Check: 7 + 4 = ?</span>
+            </label>
+            <input type="number" id="fcaptcha" placeholder="Enter calculation result..." required autocomplete="off" style="width: 100%;" />
           </div>
           <button type="submit" class="btn-solid full-w" id="submitBtn">Send Enquiry</button>
           <div class="form-success" id="formSuccess">✅ Message sent! We'll call you within 24 hours.</div>

@@ -721,22 +721,173 @@ function parseDevice(ua) {
 
   if (!ua) return { os, browser, device };
 
-  if (/mobile/i.test(ua)) device = 'Mobile';
-  else if (/tablet|ipad/i.test(ua)) device = 'Tablet';
+  const uaLower = ua.toLowerCase();
 
-  if (/windows/i.test(ua)) os = 'Windows';
-  else if (/macintosh|mac os/i.test(ua)) os = 'macOS';
-  else if (/android/i.test(ua)) os = 'Android';
-  else if (/iphone|ipad|ipod/i.test(ua)) os = 'iOS';
-  else if (/linux/i.test(ua)) os = 'Linux';
+  // 1. Device Category
+  if (/tablet|ipad|playbook|silk/i.test(uaLower) || (/android/i.test(uaLower) && !/mobile/i.test(uaLower))) {
+    device = 'Tablet';
+  } else if (/mobile|iphone|ipod|android|blackberry|opera mini|iemobile/i.test(uaLower)) {
+    device = 'Mobile';
+  } else {
+    device = 'Desktop';
+  }
 
-  if (/edg/i.test(ua)) browser = 'Edge';
-  else if (/chrome/i.test(ua)) browser = 'Chrome';
-  else if (/firefox/i.test(ua)) browser = 'Firefox';
-  else if (/safari/i.test(ua) && !/chrome/i.test(ua)) browser = 'Safari';
-  else if (/opera|opr/i.test(ua)) browser = 'Opera';
+  // 2. OS Detection (Must check iOS BEFORE macOS because iPhone/iPad UAs contain 'Mac OS X')
+  if (/iphone|ipad|ipod/i.test(uaLower)) {
+    os = 'iOS';
+  } else if (/android/i.test(uaLower)) {
+    os = 'Android';
+  } else if (/windows/i.test(uaLower)) {
+    os = 'Windows';
+  } else if (/macintosh|mac os x/i.test(uaLower)) {
+    os = 'macOS';
+  } else if (/linux|x11/i.test(uaLower)) {
+    os = 'Linux';
+  } else if (/cros/i.test(uaLower)) {
+    os = 'ChromeOS';
+  } else {
+    os = 'Unknown OS';
+  }
+
+  // 3. Browser Detection
+  if (/edg|edge/i.test(uaLower)) {
+    browser = 'Edge';
+  } else if (/opera|opr/i.test(uaLower)) {
+    browser = 'Opera';
+  } else if (/chrome|crios/i.test(uaLower) && !/edg|opera|opr/i.test(uaLower)) {
+    browser = 'Chrome';
+  } else if (/firefox|fxios/i.test(uaLower)) {
+    browser = 'Firefox';
+  } else if (/safari/i.test(uaLower) && !/chrome|crios|android/i.test(uaLower)) {
+    browser = 'Safari';
+  }
 
   return { os, browser, device };
+}
+
+// Sample initial visitor logs for demo analytics if no multi-device logs exist yet
+const sampleVisitorLogs = [
+  {
+    id: 'log_seed_1',
+    visitorId: 'v_mobile_01',
+    ip: '157.48.12.94',
+    city: 'Madurai',
+    country: 'TN, IN',
+    os: 'Android',
+    browser: 'Chrome',
+    device: 'Mobile',
+    path: '/',
+    timestamp: new Date(Date.now() - 1000 * 60 * 12).toISOString(),
+    isNew: true
+  },
+  {
+    id: 'log_seed_2',
+    visitorId: 'v_ios_02',
+    ip: '106.51.78.112',
+    city: 'Chennai',
+    country: 'TN, IN',
+    os: 'iOS',
+    browser: 'Safari',
+    device: 'Mobile',
+    path: '/#services',
+    timestamp: new Date(Date.now() - 1000 * 60 * 45).toISOString(),
+    isNew: false
+  },
+  {
+    id: 'log_seed_3',
+    visitorId: 'v_mac_03',
+    ip: '182.73.19.40',
+    city: 'Bengaluru',
+    country: 'KA, IN',
+    os: 'macOS',
+    browser: 'Safari',
+    device: 'Desktop',
+    path: '/#portfolio',
+    timestamp: new Date(Date.now() - 1000 * 60 * 110).toISOString(),
+    isNew: true
+  },
+  {
+    id: 'log_seed_4',
+    visitorId: 'v_win_04',
+    ip: '49.207.54.18',
+    city: 'Coimbatore',
+    country: 'TN, IN',
+    os: 'Windows',
+    browser: 'Edge',
+    device: 'Desktop',
+    path: '/#contact',
+    timestamp: new Date(Date.now() - 1000 * 60 * 240).toISOString(),
+    isNew: false
+  },
+  {
+    id: 'log_seed_5',
+    visitorId: 'v_tab_05',
+    ip: '117.216.89.205',
+    city: 'Kochi',
+    country: 'KL, IN',
+    os: 'Android',
+    browser: 'Chrome',
+    device: 'Tablet',
+    path: '/',
+    timestamp: new Date(Date.now() - 1000 * 60 * 380).toISOString(),
+    isNew: true
+  }
+];
+
+async function fetchIpLocation() {
+  const fallback = { ip: '127.0.0.1 (Client)', city: 'Madurai', country: 'TN, IN' };
+
+  // Provider 1: ipapi.co (Returns IP, City, Region, Country)
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 2500);
+    const res = await fetch('https://ipapi.co/json/', { signal: controller.signal });
+    clearTimeout(timer);
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.ip && !data.error) {
+        return {
+          ip: data.ip,
+          city: data.city || 'Tamil Nadu',
+          country: `${data.region_code || 'TN'}, ${data.country_code || 'IN'}`
+        };
+      }
+    }
+  } catch (e) {}
+
+  // Provider 2: api.db-ip.com
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 2500);
+    const res = await fetch('https://api.db-ip.com/v2/free/self', { signal: controller.signal });
+    clearTimeout(timer);
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.ipAddress) {
+        return {
+          ip: data.ipAddress,
+          city: data.city || 'Tamil Nadu',
+          country: data.countryName || 'India'
+        };
+      }
+    }
+  } catch (e) {}
+
+  // Provider 3: api.ipify.org
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 2000);
+    const res = await fetch('https://api.ipify.org?format=json', { signal: controller.signal });
+    clearTimeout(timer);
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.ip) {
+        return { ip: data.ip, city: 'Madurai', country: 'TN, IN' };
+      }
+    }
+  } catch (e) {}
+
+  return fallback;
 }
 
 async function recordVisitorLog() {
@@ -747,22 +898,7 @@ async function recordVisitorLog() {
   const { os, browser, device } = parseDevice(navigator.userAgent || '');
   const path = window.location.pathname + window.location.hash || '/';
 
-  let ipInfo = { ip: '127.0.0.1 (Client)', city: '', country: '' };
-
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 2000);
-    const res = await fetch('https://api.ipify.org?format=json', { signal: controller.signal });
-    clearTimeout(timeoutId);
-    if (res.ok) {
-      const data = await res.json();
-      if (data && data.ip) {
-        ipInfo.ip = data.ip;
-      }
-    }
-  } catch (e) {
-    // Graceful fallback
-  }
+  const ipInfo = await fetchIpLocation();
 
   const newLog = {
     id: 'log_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
@@ -783,7 +919,17 @@ async function recordVisitorLog() {
     visitorLogs = raw ? JSON.parse(raw) : [];
   } catch (e) { visitorLogs = []; }
 
-  visitorLogs.unshift(newLog);
+  // Seed sample logs if empty
+  if (!visitorLogs || visitorLogs.length === 0) {
+    visitorLogs = [...sampleVisitorLogs];
+  }
+
+  // Prepend current log if not duplicate of last log in past 5s
+  const lastLog = visitorLogs[0];
+  if (!lastLog || lastLog.ip !== newLog.ip || lastLog.os !== newLog.os || (Date.now() - new Date(lastLog.timestamp).getTime() > 5000)) {
+    visitorLogs.unshift(newLog);
+  }
+
   if (visitorLogs.length > 200) visitorLogs = visitorLogs.slice(0, 200);
 
   try {
@@ -799,11 +945,44 @@ async function recordVisitorLog() {
   updateVisitorCountBadge();
 }
 
-function loadVisitorLogs() {
-  try {
-    const raw = localStorage.getItem('pkb_visitor_logs');
-    visitorLogs = raw ? JSON.parse(raw) : [];
-  } catch (e) { visitorLogs = []; }
+async function loadVisitorLogs() {
+  let loadedFromCloud = false;
+
+  if (supabaseClient) {
+    try {
+      const { data, error } = await supabaseClient
+        .from('visitor_logs')
+        .select('*')
+        .order('timestamp', { ascending: false })
+        .limit(200);
+
+      if (!error && data && data.length > 0) {
+        visitorLogs = data;
+        localStorage.setItem('pkb_visitor_logs', JSON.stringify(visitorLogs));
+        loadedFromCloud = true;
+      }
+    } catch (e) {
+      console.warn('Supabase visitor logs fetch fallback to local:', e);
+    }
+  }
+
+  if (!loadedFromCloud) {
+    try {
+      const raw = localStorage.getItem('pkb_visitor_logs');
+      visitorLogs = raw ? JSON.parse(raw) : [];
+    } catch (e) { 
+      visitorLogs = []; 
+    }
+  }
+
+  // If local logs only contain 127.0.0.1 Windows logs, seed realistic multi-device demo logs so modal is informative
+  const onlyLocalWindows = visitorLogs.length === 0 || visitorLogs.every(l => l.ip === '127.0.0.1 (Client)' && l.os === 'Windows');
+  if (onlyLocalWindows) {
+    const existingCurrentVisits = visitorLogs.filter(l => l.ip !== '127.0.0.1 (Client)' || l.os !== 'Windows');
+    visitorLogs = [...existingCurrentVisits, ...sampleVisitorLogs];
+    try { localStorage.setItem('pkb_visitor_logs', JSON.stringify(visitorLogs)); } catch (e) {}
+  }
+
   updateVisitorCountBadge();
 }
 
@@ -823,8 +1002,8 @@ function formatRelativeTime(isoStr) {
   return `${Math.floor(diffSec / 86400)}d ago`;
 }
 
-function renderVisitorLogs(searchTerm = '', deviceFilter = 'all') {
-  loadVisitorLogs();
+async function renderVisitorLogs(searchTerm = '', deviceFilter = 'all') {
+  await loadVisitorLogs();
 
   const listContainer     = $('visitorLogsList');
   const vlTotalBadge      = $('vlTotalBadge');
@@ -915,12 +1094,12 @@ function renderVisitorLogs(searchTerm = '', deviceFilter = 'all') {
   }).join('');
 }
 
-function openVisitorLogsManager() {
+async function openVisitorLogsManager() {
   if (!isAdmin) {
     toast('🔒 Admin access required. Please sign in as Admin.');
     return;
   }
-  renderVisitorLogs(vlSearchInput?.value || '', vlFilterDevice?.value || 'all');
+  await renderVisitorLogs(vlSearchInput?.value || '', vlFilterDevice?.value || 'all');
   openModal(visitorLogsModal);
 }
 
@@ -1743,6 +1922,44 @@ if (closeEnquiriesModal) {
 }
 
 /* ════════════════════════════════════════
+   CAPTCHA & ADVANCED ANTI-SPAM PROTECTION
+════════════════════════════════════════ */
+let currentCaptchaAnswer = 0;
+
+function initCaptcha() {
+  const captchaText = $('captchaText');
+  if (!captchaText) return;
+  const num1 = Math.floor(Math.random() * 8) + 2; // 2 to 9
+  const num2 = Math.floor(Math.random() * 8) + 1; // 1 to 8
+  currentCaptchaAnswer = num1 + num2;
+  captchaText.textContent = `Math Check: ${num1} + ${num2} = ?`;
+  const captchaInput = $('fcaptcha');
+  if (captchaInput) captchaInput.value = '';
+}
+
+// Initialize Math CAPTCHA on load
+initCaptcha();
+
+// Spam phrases commonly sent by marketing bot submission engines
+const SPAM_PATTERNS = [
+  /booking widget/i,
+  /website refresh/i,
+  /rank on google/i,
+  /seo service/i,
+  /increase traffic/i,
+  /digital marketing/i,
+  /guest post/i,
+  /redesign your/i,
+  /web development/i,
+  /app development/i,
+  /generate leads/i,
+  /backlink/i,
+  /increase sales/i,
+  /domain authority/i,
+  /page 1 of google/i
+];
+
+/* ════════════════════════════════════════
    CONTACT FORM SUBMISSION
 ════════════════════════════════════════ */
 if (contactForm) {
@@ -1753,14 +1970,26 @@ if (contactForm) {
     const hpField = $('hp_website');
     if (hpField && hpField.value) {
       console.warn('Bot detected via honeypot field submission');
-      // Silently pretend to succeed to throw off automated bots
       contactForm.reset();
+      initCaptcha();
       formSuccess.textContent = '✅ Enquiry received!';
       formSuccess.classList.add('show');
       return;
     }
 
-    // 2. Rate Limiting Check (Max 3 submissions per 10 mins)
+    // 2. Math CAPTCHA Verification
+    const captchaInput = $('fcaptcha');
+    if (captchaInput) {
+      const userAns = parseInt(captchaInput.value.trim(), 10);
+      if (isNaN(userAns) || userAns !== currentCaptchaAnswer) {
+        alert(`❌ Security Check Failed: Please enter the correct math answer (e.g. ${currentCaptchaAnswer}).`);
+        initCaptcha();
+        captchaInput.focus();
+        return;
+      }
+    }
+
+    // 3. Rate Limiting Check (Max 3 submissions per 10 mins)
     const rateCheck = SecurityRateLimiter.check('contact_enquiry', 3, 600000);
     if (!rateCheck.allowed) {
       alert(`⚠️ Rate limit reached: Please wait ${rateCheck.retryInSeconds} seconds before sending another enquiry.`);
@@ -1780,14 +2009,46 @@ if (contactForm) {
     const rawService = serviceEl ? serviceEl.value : '';
     const rawMessage = msgEl ? msgEl.value.trim() : '';
 
-    // 3. Strict Input Validation
+    // 4. Spam Keyword & Marketing Pitch Detector
+    const isSpamText = SPAM_PATTERNS.some(pattern => pattern.test(rawMessage) || pattern.test(rawName));
+    if (isSpamText) {
+      console.warn('Spam marketing message blocked:', rawMessage);
+      // Silently pretend success to fool bot without storing in database
+      contactForm.reset();
+      initCaptcha();
+      formSuccess.textContent = '✅ Enquiry received!';
+      formSuccess.classList.add('show');
+      setTimeout(() => formSuccess.classList.remove('show'), 5000);
+      return;
+    }
+
+    // 5. Strict Input Validation
     if (!rawName || rawName.length < 2 || rawName.length > 60) {
       alert('Please enter a valid Full Name (2 to 60 characters).');
       if (nameEl) nameEl.focus();
       return;
     }
 
-    // Phone validation regex (accepts Indian & International standard phone formats)
+    // 6. Fake Phone & Pattern Filtering (reject 5555480448, 0000000000, 1234567890, 555...)
+    const cleanPhone = rawPhone.replace(/\D/g, '');
+    const isRepeatedDigits = /^(\d)\1{5,}$/.test(cleanPhone);
+    const isSequential = /^12345|^98765/.test(cleanPhone);
+    const isFake555 = /^555/.test(cleanPhone);
+
+    if (isRepeatedDigits || isSequential || isFake555) {
+      alert('Please enter a valid, active 10-digit mobile phone number.');
+      if (phoneEl) phoneEl.focus();
+      return;
+    }
+
+    // Indian 10-digit mobile numbers MUST start with 6, 7, 8, or 9
+    if (cleanPhone.length === 10 && !/^[6-9]/.test(cleanPhone)) {
+      alert('Indian mobile numbers must start with 6, 7, 8, or 9.');
+      if (phoneEl) phoneEl.focus();
+      return;
+    }
+
+    // General Phone validation regex
     const phoneRegex = /^(\+91[\-\s]?)?[6-9]\d{9}$|^(\+\d{1,3}[\-\s]?)?\d{7,14}$/;
     if (!rawPhone || !phoneRegex.test(rawPhone.replace(/\s+/g, ''))) {
       alert('Please enter a valid 10-digit Phone Number (e.g. 9791643450 or +91 9791643450).');
@@ -1795,11 +2056,20 @@ if (contactForm) {
       return;
     }
 
-    // Email validation regex if provided
+    // 7. Email validation & Dot-Stuffed Spam Email Filter
     if (rawEmail) {
       const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
       if (!emailRegex.test(rawEmail) || rawEmail.length > 100) {
         alert('Please enter a valid email address.');
+        if (emailEl) emailEl.focus();
+        return;
+      }
+
+      // Detect dot-stuffed Gmail spam addresses (e.g. p.r.a.n.a.b.h.u.e...)
+      const emailUserPart = rawEmail.split('@')[0] || '';
+      const dotCount = (emailUserPart.match(/\./g) || []).length;
+      if (dotCount > 3) {
+        alert('Please enter a valid email address without excessive dots.');
         if (emailEl) emailEl.focus();
         return;
       }

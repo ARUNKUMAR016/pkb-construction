@@ -4,11 +4,25 @@ import { Phone, Mail, MapPin, Clock, Send, CheckCircle2, AlertTriangle } from 'l
 
 export default function Contact() {
   const { contact, business } = content;
-  const [formData, setFormData] = useState({ name: '', phone: '', message: '', website: '' });
+  const [formData, setFormData] = useState({ name: '', phone: '', message: '', website: '', captcha: '' });
   const [errorMessage, setErrorMessage] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [lastSubmissionTime, setLastSubmissionTime] = useState(0);
+
+  // Dynamic Math CAPTCHA State
+  const [captchaChallenge, setCaptchaChallenge] = useState(() => {
+    const n1 = Math.floor(Math.random() * 8) + 2;
+    const n2 = Math.floor(Math.random() * 8) + 1;
+    return { num1: n1, num2: n2, answer: n1 + n2 };
+  });
+
+  const refreshCaptcha = () => {
+    const n1 = Math.floor(Math.random() * 8) + 2;
+    const n2 = Math.floor(Math.random() * 8) + 1;
+    setCaptchaChallenge({ num1: n1, num2: n2, answer: n1 + n2 });
+    setFormData(prev => ({ ...prev, captcha: '' }));
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -16,13 +30,33 @@ export default function Contact() {
 
     // 1. Honeypot check for bots
     if (formData.website) {
-      // Quietly succeed for bot traffic
       setIsSubmitted(true);
-      setFormData({ name: '', phone: '', message: '', website: '' });
+      setFormData({ name: '', phone: '', message: '', website: '', captcha: '' });
       return;
     }
 
-    // 2. Client-side Rate Limiting (1 submission per 60 seconds)
+    // 2. Math CAPTCHA Verification
+    const userAns = parseInt(formData.captcha.trim(), 10);
+    if (isNaN(userAns) || userAns !== captchaChallenge.answer) {
+      setErrorMessage(`Security Check Failed: Please enter the correct answer (${captchaChallenge.num1} + ${captchaChallenge.num2} = ${captchaChallenge.answer}).`);
+      refreshCaptcha();
+      return;
+    }
+
+    // 3. Spam Phrase / Marketing Pitch Filter
+    const spamPatterns = [
+      /booking widget/i, /website refresh/i, /rank on google/i, /seo service/i,
+      /increase traffic/i, /digital marketing/i, /guest post/i, /redesign your/i,
+      /web development/i, /generate leads/i, /backlink/i
+    ];
+    const isSpam = spamPatterns.some(p => p.test(formData.message) || p.test(formData.name));
+    if (isSpam) {
+      setIsSubmitted(true);
+      setFormData({ name: '', phone: '', message: '', website: '', captcha: '' });
+      return;
+    }
+
+    // 4. Client-side Rate Limiting (1 submission per 60 seconds)
     const now = Date.now();
     if (now - lastSubmissionTime < 60000) {
       const waitSec = Math.ceil((60000 - (now - lastSubmissionTime)) / 1000);
@@ -33,9 +67,22 @@ export default function Contact() {
     const rawName = formData.name.trim();
     const rawPhone = formData.phone.trim();
 
-    // 3. Strict Input Validation
+    // 5. Strict Input Validation
     if (!rawName || rawName.length < 2 || rawName.length > 60) {
       setErrorMessage('Please enter a valid name (2-60 characters).');
+      return;
+    }
+
+    const cleanPhone = rawPhone.replace(/\D/g, '');
+    const isRepeatedDigits = /^(\d)\1{5,}$/.test(cleanPhone);
+    const isFake555 = /^555/.test(cleanPhone);
+    if (isRepeatedDigits || isFake555) {
+      setErrorMessage('Please enter a valid active 10-digit mobile phone number.');
+      return;
+    }
+
+    if (cleanPhone.length === 10 && !/^[6-9]/.test(cleanPhone)) {
+      setErrorMessage('Indian mobile numbers must start with 6, 7, 8, or 9.');
       return;
     }
 
@@ -56,7 +103,7 @@ export default function Contact() {
     setTimeout(() => {
       setIsLoading(false);
       setIsSubmitted(true);
-      setFormData({ name: '', phone: '', message: '', website: '' });
+      setFormData({ name: '', phone: '', message: '', website: '', captcha: '' });
     }, 800);
   };
 
@@ -220,11 +267,33 @@ export default function Contact() {
                     <textarea
                       id="message"
                       name="message"
-                      rows={5}
+                      rows={4}
                       value={formData.message}
                       onChange={handleChange}
                       placeholder="Specify project site, approx dimensions, expected start date..."
                       className="w-full bg-primary border border-panel focus:border-accent p-3 text-sm text-textLight focus:outline-none min-h-[44px] placeholder-textMuted/60 transition-colors resize-y"
+                    />
+                  </div>
+
+                  {/* Math CAPTCHA Security Challenge */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <label htmlFor="captcha" className="font-heading text-xs text-textLight tracking-wider uppercase font-semibold">
+                        Security Verification <span className="text-accent">*</span>
+                      </label>
+                      <span className="font-heading text-xs font-bold text-accent bg-accent/15 px-2.5 py-1 rounded border border-accent/30">
+                        Math Check: {captchaChallenge.num1} + {captchaChallenge.num2} = ?
+                      </span>
+                    </div>
+                    <input
+                      type="number"
+                      id="captcha"
+                      name="captcha"
+                      required
+                      value={formData.captcha}
+                      onChange={handleChange}
+                      placeholder="Enter calculation result..."
+                      className="w-full bg-primary border border-panel focus:border-accent p-3 text-sm text-textLight focus:outline-none min-h-[44px] placeholder-textMuted/60 transition-colors"
                     />
                   </div>
 
