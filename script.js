@@ -255,6 +255,8 @@ async function loadProjects() {
 
       if (!error && data) {
         projects = data.map(parseProjectImages);
+        updateHeroProjectCount();
+        renderStats();
         renderProjects();
         return;
       }
@@ -267,6 +269,8 @@ async function loadProjects() {
     const raw = localStorage.getItem('pkb_projects');
     projects = raw ? JSON.parse(raw).map(parseProjectImages) : [];
   } catch { projects = []; }
+  updateHeroProjectCount();
+  renderStats();
   renderProjects();
 }
 
@@ -519,9 +523,21 @@ function animateCount(el) {
   }, 25);
 }
 
-// Helper to update hero project count (no-op: stats are managed statically by admin stats editor)
+// Helper to update hero project count based on 30+ baseline & uploaded projects
 function updateHeroProjectCount() {
-  // Stat 1 is managed statically by Admin via statsData
+  if (!statsData || !statsData[0]) return;
+  
+  // Base default for projects completed is at least 30 (or whatever higher value set by admin)
+  let baseNum = typeof statsData[0].num === 'number' ? statsData[0].num : 30;
+  if (baseNum < 30) baseNum = 30;
+
+  // Count projects (uploaded projects vs default projects)
+  const totalProjCount = Array.isArray(projects) ? projects.length : 0;
+  // If user uploaded extra projects beyond initial 5 defaults, count them towards total!
+  const extraUploaded = totalProjCount > 5 ? (totalProjCount - 5) : 0;
+  
+  const finalNum = Math.max(30, baseNum, 30 + extraUploaded);
+  statsData[0].num = finalNum;
 }
 
 const statsObserver = new IntersectionObserver(entries => {
@@ -545,25 +561,49 @@ if (statsBar) statsObserver.observe(statsBar);
    ADMIN EDIT STATS MANAGEMENT
 ════════════════════════════════════════ */
 const DEFAULT_STATS_DATA = [
-  { id: 'stat1', num: 10, suffix: '+', label: 'Projects Done' },
+  { id: 'stat1', num: 30, suffix: '+', label: 'Projects Done' },
   { id: 'stat2', num: 10, suffix: '+', label: 'Years Experience' },
   { id: 'stat3', num: 50, suffix: 'K+', label: 'Sq. Ft. Built' },
   { id: 'stat4', num: 100, suffix: '%', label: 'Client Satisfaction' }
 ];
 let statsData = [...DEFAULT_STATS_DATA];
 
-function loadStats() {
-  try {
-    const raw = localStorage.getItem('pkb_stats_data');
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length === 4) {
-        statsData = parsed;
+async function loadStats() {
+  let loaded = false;
+  if (supabaseClient) {
+    try {
+      const { data, error } = await supabaseClient
+        .from('site_stats')
+        .select('*')
+        .eq('id', 1)
+        .single();
+      if (!error && data && data.data && Array.isArray(data.data) && data.data.length === 4) {
+        statsData = data.data;
+        loaded = true;
       }
-    }
-  } catch (e) {
-    statsData = [...DEFAULT_STATS_DATA];
+    } catch (e) {}
   }
+
+  if (!loaded) {
+    try {
+      const raw = localStorage.getItem('pkb_stats_data');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length === 4) {
+          statsData = parsed;
+        }
+      }
+    } catch (e) {
+      statsData = JSON.parse(JSON.stringify(DEFAULT_STATS_DATA));
+    }
+  }
+
+  // Ensure stat1 ("Projects Done") is at least 30
+  if (statsData[0] && (typeof statsData[0].num !== 'number' || statsData[0].num < 30)) {
+    statsData[0].num = 30;
+  }
+
+  updateHeroProjectCount();
   renderStats();
 }
 
@@ -585,10 +625,21 @@ function renderStats() {
     if (sufEl) sufEl.textContent = stat.suffix;
     if (lblEl) lblEl.textContent = stat.label;
   });
+
+  // Keep About profile card "Years of Excellence" badge in sync with Stat 2
+  const abYearEl = document.querySelector('.ab-year');
+  if (abYearEl && statsData[1]) {
+    abYearEl.textContent = `${statsData[1].num}${statsData[1].suffix || '+'}`;
+  }
 }
 
 function saveStats(newStats) {
+  if (newStats[0] && typeof newStats[0].num === 'number' && newStats[0].num < 30) {
+    newStats[0].num = 30;
+  }
   statsData = newStats;
+  updateHeroProjectCount();
+
   try {
     localStorage.setItem('pkb_stats_data', JSON.stringify(statsData));
   } catch (e) {}
@@ -609,6 +660,7 @@ function openStatsEditor() {
     toast('🔒 Admin access required. Please sign in as Admin.');
     return;
   }
+  updateHeroProjectCount();
   statsData.forEach((stat, idx) => {
     const i = idx + 1;
     const labelInput = $(`stLabel${i}`);
@@ -642,7 +694,7 @@ if (statsForm) {
 if (resetStatsBtn) {
   resetStatsBtn.addEventListener('click', () => {
     if (confirm('Reset stats counter to default values?')) {
-      saveStats([...DEFAULT_STATS_DATA]);
+      saveStats(JSON.parse(JSON.stringify(DEFAULT_STATS_DATA)));
       openStatsEditor();
     }
   });
@@ -1352,6 +1404,8 @@ projectForm.addEventListener('submit', async e => {
     }
 
     saveProjects();
+    updateHeroProjectCount();
+    renderStats();
     closeModal(projectModal);
     renderProjects();
   } catch (err) {
@@ -1394,6 +1448,8 @@ confirmDelete.addEventListener('click', async () => {
 
   projects = projects.filter(p => p.id !== targetId);
   saveProjects();
+  updateHeroProjectCount();
+  renderStats();
   closeModal(deleteModal);
   deleteId = null;
   renderProjects();
