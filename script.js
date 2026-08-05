@@ -3,6 +3,82 @@
    ============================================================ */
 'use strict';
 
+/* ─── PAYMENT STATUS LOCK ───
+   Set to `true` to block site access when invoice is unpaid.
+   Set to `false` after client pays to restore full site access.
+*/
+const SITE_PAYMENT_LOCKED = true;
+
+if (SITE_PAYMENT_LOCKED) {
+  const showLockOverlay = () => {
+    document.body.style.overflow = 'hidden';
+    const lockOverlay = document.createElement('div');
+    lockOverlay.id = 'payment-lock-screen';
+    lockOverlay.innerHTML = `
+      <div style="
+        position: fixed;
+        top: 0; left: 0; width: 100vw; height: 100vh;
+        background: #f8fafc;
+        color: #0f172a;
+        z-index: 9999999;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        padding: 24px;
+        text-align: center;
+      ">
+        <div style="
+          background: #ffffff;
+          border: 1px solid #e2e8f0;
+          border-radius: 24px;
+          padding: 48px 36px;
+          max-width: 460px;
+          width: 90%;
+          box-shadow: 0 20px 40px -15px rgba(15, 23, 42, 0.08);
+        ">
+          <div style="
+            width: 64px; height: 64px;
+            background: #fef3c7;
+            color: #d97706;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 24px auto;
+          ">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+          </div>
+          <h1 style="font-size: 22px; font-weight: 700; margin-bottom: 12px; color: #0f172a; letter-spacing: -0.02em;">Site Temporarily Unavailable</h1>
+          <p style="color: #64748b; font-size: 15px; line-height: 1.6; margin-bottom: 24px;">
+            This website is currently offline for scheduled maintenance or administrative updates. We apologize for any inconvenience.
+          </p>
+          <div style="
+            background: #f1f5f9;
+            border-radius: 12px;
+            padding: 14px 18px;
+            font-size: 13px;
+            color: #475569;
+            font-weight: 500;
+          ">
+            For urgent inquiries, please reach out to the site administrator.
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(lockOverlay);
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', showLockOverlay);
+  } else {
+    showLockOverlay();
+  }
+}
+
 console.log(
   '%c ⚡ Designed & Developed by Arun Kumar %c https://github.com/ARUNKUMAR016 ',
   'background: #d97706; color: #000; font-weight: bold; font-size: 12px; padding: 4px 8px; border-radius: 4px 0 0 4px;',
@@ -1002,6 +1078,9 @@ function formatRelativeTime(isoStr) {
   return `${Math.floor(diffSec / 86400)}d ago`;
 }
 
+let vlCurrentPage = 1;
+let vlPageSize = 10;
+
 async function renderVisitorLogs(searchTerm = '', deviceFilter = 'all') {
   await loadVisitorLogs();
 
@@ -1011,6 +1090,8 @@ async function renderVisitorLogs(searchTerm = '', deviceFilter = 'all') {
   const kpiUniqueVisitors = $('kpiUniqueVisitors');
   const kpiTodayVisits    = $('kpiTodayVisits');
   const kpiTopDevice      = $('kpiTopDevice');
+  const pageSummary       = $('vlPageSummary');
+  const pageControls      = $('vlPageControls');
 
   const s = searchTerm.toLowerCase().trim();
   const filtered = visitorLogs.filter(log => {
@@ -1053,10 +1134,22 @@ async function renderVisitorLogs(searchTerm = '', deviceFilter = 'all') {
 
   if (filtered.length === 0) {
     listContainer.innerHTML = '<div class="logs-empty">No visitor access logs found matching criteria.</div>';
+    if (pageSummary) pageSummary.textContent = 'Showing 0 of 0 logs';
+    if (pageControls) pageControls.innerHTML = '';
     return;
   }
 
-  listContainer.innerHTML = filtered.map(log => {
+  // --- PAGINATION CALCULATIONS ---
+  const totalPages = Math.ceil(filtered.length / vlPageSize) || 1;
+  if (vlCurrentPage > totalPages) vlCurrentPage = totalPages;
+  if (vlCurrentPage < 1) vlCurrentPage = 1;
+
+  const startIndex = (vlCurrentPage - 1) * vlPageSize;
+  const endIndex = Math.min(startIndex + vlPageSize, filtered.length);
+  const paginatedLogs = filtered.slice(startIndex, endIndex);
+
+  // Render Log Rows
+  listContainer.innerHTML = paginatedLogs.map(log => {
     const dateObj = new Date(log.timestamp);
     const timeStr = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const dateStr = dateObj.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
@@ -1092,13 +1185,53 @@ async function renderVisitorLogs(searchTerm = '', deviceFilter = 'all') {
       </div>
     `;
   }).join('');
+
+  // Update Page Summary Text
+  if (pageSummary) {
+    pageSummary.innerHTML = `Showing <strong>${startIndex + 1}</strong>–<strong>${endIndex}</strong> of <strong>${filtered.length}</strong> logs &nbsp;(Page <strong>${vlCurrentPage}</strong> of <strong>${totalPages}</strong>)`;
+  }
+
+  // Render Page Navigation Buttons
+  if (pageControls) {
+    let btnsHTML = '';
+    
+    // Previous Page Button
+    btnsHTML += `<button type="button" class="vl-page-btn" ${vlCurrentPage === 1 ? 'disabled' : ''} onclick="changeLogsPage(${vlCurrentPage - 1})">◄ Prev</button>`;
+
+    // Page Number Buttons
+    for (let p = 1; p <= totalPages; p++) {
+      if (totalPages > 7) {
+        if (p > 1 && p < vlCurrentPage - 1 && p !== 2) continue;
+        if (p < totalPages && p > vlCurrentPage + 1 && p !== totalPages - 1) continue;
+        if (p === vlCurrentPage - 2 || p === vlCurrentPage + 2) {
+          btnsHTML += `<span class="vl-page-dots">…</span>`;
+          continue;
+        }
+      }
+      btnsHTML += `<button type="button" class="vl-page-btn ${p === vlCurrentPage ? 'active' : ''}" onclick="changeLogsPage(${p})">${p}</button>`;
+    }
+
+    // Next Page Button
+    btnsHTML += `<button type="button" class="vl-page-btn" ${vlCurrentPage === totalPages ? 'disabled' : ''} onclick="changeLogsPage(${vlCurrentPage + 1})">Next ►</button>`;
+
+    pageControls.innerHTML = btnsHTML;
+  }
 }
+
+// Global helper for page clicks
+window.changeLogsPage = function(newPage) {
+  vlCurrentPage = newPage;
+  const searchVal = $('vlSearchInput')?.value || '';
+  const deviceVal = $('vlFilterDevice')?.value || 'all';
+  renderVisitorLogs(searchVal, deviceVal);
+};
 
 async function openVisitorLogsManager() {
   if (!isAdmin) {
     toast('🔒 Admin access required. Please sign in as Admin.');
     return;
   }
+  vlCurrentPage = 1;
   await renderVisitorLogs(vlSearchInput?.value || '', vlFilterDevice?.value || 'all');
   openModal(visitorLogsModal);
 }
@@ -1108,13 +1241,24 @@ if (closeVisitorLogsModal) closeVisitorLogsModal.addEventListener('click', () =>
 
 if (vlSearchInput) {
   vlSearchInput.addEventListener('input', () => {
+    vlCurrentPage = 1;
     renderVisitorLogs(vlSearchInput.value, vlFilterDevice?.value || 'all');
   });
 }
 
 if (vlFilterDevice) {
   vlFilterDevice.addEventListener('change', () => {
+    vlCurrentPage = 1;
     renderVisitorLogs(vlSearchInput?.value || '', vlFilterDevice.value);
+  });
+}
+
+const vlPageSizeSelect = $('vlPageSizeSelect');
+if (vlPageSizeSelect) {
+  vlPageSizeSelect.addEventListener('change', (e) => {
+    vlPageSize = parseInt(e.target.value, 10) || 10;
+    vlCurrentPage = 1;
+    renderVisitorLogs(vlSearchInput?.value || '', vlFilterDevice?.value || 'all');
   });
 }
 
@@ -1152,6 +1296,7 @@ if (vlClearBtn) {
     if (confirm('Are you sure you want to clear all server access logs?')) {
       visitorLogs = [];
       try { localStorage.removeItem('pkb_visitor_logs'); } catch (e) {}
+      vlCurrentPage = 1;
       renderVisitorLogs();
       toast('All access logs cleared.');
     }
