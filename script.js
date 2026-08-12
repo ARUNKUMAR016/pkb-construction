@@ -7,7 +7,7 @@
    Set to `true` to block site access when invoice is unpaid.
    Set to `false` after client pays to restore full site access.
 */
-const SITE_PAYMENT_LOCKED = true;
+const SITE_PAYMENT_LOCKED = false;
 
 if (SITE_PAYMENT_LOCKED) {
   const showLockOverlay = () => {
