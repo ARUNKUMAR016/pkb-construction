@@ -148,11 +148,14 @@ ul   { list-style: none; }
   flex-direction: column;
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
-  background: var(--ink);
-  padding: 88px 28px 100px;
+  height: 100vh;
+  height: 100dvh;
+  background: var(--ink) !important;
+  padding: 76px 24px 32px;
   z-index: 999;
   gap: 0;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   list-style: none;
   
   /* Transition state (closed) */
@@ -168,28 +171,42 @@ ul   { list-style: none; }
   transform: translateY(0);
 }
 
-.nav-links li { border-bottom: 1px solid rgba(255,255,255,0.05); }
+.nav-links li { border-bottom: 1px solid rgba(255,255,255,0.06); }
 .nav-links .nav-link {
   display: block;
-  font-family: var(--display); font-size: 2.8rem; font-weight: 900;
-  text-transform: uppercase; letter-spacing: 0.02em;
-  color: rgba(255,255,255,0.4);
-  padding: 14px 0;
+  font-family: var(--display);
+  font-size: 1.65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: rgba(255,255,255,0.7);
+  padding: 13px 0;
   transition: color 0.2s;
 }
 .nav-links .nav-link:hover,
-.nav-links .nav-link.active { color: var(--orange); }
+.nav-links .nav-link.active { color: var(--orange) !important; }
 
-/* When mobile menu is open, keep navbar background dark and hamburger white */
-.navbar.nav-open {
+/* When mobile menu is open, keep navbar background dark and hamburger white, even when scrolled */
+.navbar.nav-open,
+.navbar.solid.nav-open {
   background: var(--ink) !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
   box-shadow: none !important;
   border-bottom: 1px solid rgba(255,255,255,0.08) !important;
 }
-.navbar.nav-open .hamburger span {
+.navbar.nav-open .hamburger span,
+.navbar.solid.nav-open .hamburger span {
   background: var(--white) !important;
+}
+.navbar.nav-open .admin-trigger,
+.navbar.solid.nav-open .admin-trigger {
+  background: rgba(255,255,255,0.08) !important;
+  color: rgba(255,255,255,0.6) !important;
+}
+.navbar.nav-open .logo-img,
+.navbar.solid.nav-open .logo-img {
+  content: url('logo-light.png');
 }
 
 /* Darken page behind open menu */
@@ -224,7 +241,7 @@ ul   { list-style: none; }
   background: rgba(255,255,255,0.75); transition: var(--t);
   display: block;
 }
-.navbar.solid .hamburger span { background: var(--ink-mid); }
+.navbar.solid:not(.nav-open) .hamburger span { background: var(--ink-mid); }
 .hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
 .hamburger.open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
 .hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
@@ -1888,7 +1905,7 @@ body.modal-open .mobile-bottom-nav { display: none !important; }
    ════════════════════════════════════════ */
 
 /* Glassmorphism Navbar Solid State */
-.navbar.solid {
+.navbar.solid:not(.nav-open) {
   background: rgba(255, 255, 255, 0.95) !important;
   backdrop-filter: blur(20px) !important;
   -webkit-backdrop-filter: blur(20px) !important;
