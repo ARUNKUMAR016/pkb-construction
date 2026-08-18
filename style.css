@@ -150,7 +150,7 @@ ul   { list-style: none; }
   top: 0; left: 0; right: 0; bottom: 0;
   height: 100vh;
   height: 100dvh;
-  background: var(--ink) !important;
+  background: var(--ink);
   padding: 76px 24px 32px;
   z-index: 999;
   gap: 0;
@@ -257,7 +257,8 @@ ul   { list-style: none; }
     gap: 8px;
     margin-left: auto;
     position: static;
-    background: transparent;
+    height: auto;
+    background: transparent !important;
     padding: 0;
     z-index: auto;
     overflow-y: visible;
@@ -2394,6 +2395,193 @@ body.admin-mode .stats-admin-edit-btn {
   padding: 40px 20px;
   color: #94a3b8;
   font-size: 0.88rem;
+}
+
+/* ════════════════════════════════════════
+   CLIENT REVIEWS / TESTIMONIALS SECTION
+════════════════════════════════════════ */
+.reviews {
+  padding: 80px 0;
+  background: var(--cream);
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+}
+.reviews-section-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 48px;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+.reviews-headline {
+  font-family: var(--display);
+  font-size: clamp(2.2rem, 8vw, 3.6rem);
+  font-weight: 900;
+  text-transform: uppercase;
+  line-height: 0.95;
+  color: var(--ink);
+}
+.reviews-headline em {
+  font-style: normal;
+  color: var(--orange);
+}
+
+.reviews-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+}
+@media (min-width: 640px) {
+  .reviews-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (min-width: 1024px) {
+  .reviews-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+.review-card {
+  background: var(--white);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 28px 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+  transition: transform var(--t), box-shadow var(--t), border-color var(--t);
+}
+.review-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
+  border-color: rgba(224, 92, 16, 0.3);
+}
+
+.rev-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.rev-stars {
+  color: #f59e0b;
+  font-size: 1.15rem;
+  letter-spacing: 2px;
+}
+.rev-tag {
+  font-family: var(--display);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: rgba(224, 92, 16, 0.08);
+  color: var(--orange);
+  padding: 3px 8px;
+  border-radius: 2px;
+}
+
+.rev-comment {
+  font-family: var(--body);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--text-body);
+  margin-bottom: 24px;
+  font-style: italic;
+  position: relative;
+}
+.rev-comment::before {
+  content: '"';
+  font-family: var(--display);
+  font-size: 2.2rem;
+  color: rgba(224, 92, 16, 0.25);
+  position: absolute;
+  top: -16px;
+  left: -12px;
+  line-height: 1;
+}
+
+.rev-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px dashed var(--rule);
+  padding-top: 16px;
+  margin-top: auto;
+}
+.rev-author {
+  display: flex;
+  flex-direction: column;
+}
+.rev-name {
+  font-family: var(--display);
+  font-size: 1.05rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--ink);
+  letter-spacing: 0.03em;
+}
+.rev-role {
+  font-family: var(--body);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* Admin controls on review cards */
+.rev-admin-actions {
+  display: flex;
+  gap: 6px;
+}
+.rev-btn-edit, .rev-btn-del {
+  font-family: var(--display);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 2px;
+  border: none;
+  cursor: pointer;
+  transition: background var(--t);
+}
+.rev-btn-edit {
+  background: rgba(224, 92, 16, 0.12);
+  color: var(--orange);
+}
+.rev-btn-edit:hover {
+  background: var(--orange);
+  color: var(--white);
+}
+.rev-btn-del {
+  background: rgba(220, 38, 38, 0.12);
+  color: #dc2626;
+}
+.rev-btn-del:hover {
+  background: #dc2626;
+  color: var(--white);
+}
+
+.reviews-empty {
+  text-align: center;
+  padding: 60px 20px;
+  background: var(--white);
+  border: 2px dashed var(--rule);
+  border-radius: 4px;
+}
+.re-icon {
+  font-size: 2.8rem;
+  display: block;
+  margin-bottom: 12px;
+}
+.reviews-empty h3 {
+  font-family: var(--display);
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+.reviews-empty p {
+  font-family: var(--body);
+  font-size: 0.9rem;
+  color: var(--text-muted);
 }
 
 

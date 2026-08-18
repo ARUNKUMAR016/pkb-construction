@@ -158,6 +158,34 @@ const DEFAULT_PROJECTS = [
   }
 ];
 
+/* ─── DEFAULT REVIEWS ─── */
+const DEFAULT_REVIEWS = [
+  {
+    id: 'rev-default-1',
+    name: 'Mr. S. Rajesh',
+    role: 'Homeowner, Chennai',
+    rating: 5,
+    projectTag: '3BHK Luxury Villa',
+    comment: 'K. Prasath B.E Civil and his team built our 3BHK villa with incredible structural quality. Completed 2 weeks ahead of schedule with complete cost transparency!'
+  },
+  {
+    id: 'rev-default-2',
+    name: 'K. Venkatesh',
+    role: 'Commercial Client, Coimbatore',
+    rating: 5,
+    projectTag: 'G+4 Office Complex',
+    comment: 'Professional engineering oversight throughout our office building construction. Zero hidden costs and excellent site safety standards.'
+  },
+  {
+    id: 'rev-default-3',
+    name: 'Mrs. Anitha Ramesh',
+    role: 'Residential Build, Salem',
+    rating: 5,
+    projectTag: 'Contemporary House',
+    comment: 'Exceptional attention to detail from foundation to final paint. Highly recommend PKB Kalai Construction for anyone looking to build their dream home.'
+  }
+];
+
 /* ─── CONSTANTS & SECURITY HASHES ─── */
 const HASHED_USER = '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918'; // SHA-256 of admin
 const HASHED_PASS = '4bf6b146b72019624754f1c41753f9e5889ee02e67e450f8750d1126d9ee7688'; // SHA-256 of pkb@2024
@@ -280,6 +308,110 @@ let activeFilter  = 'all';
 let modalImages   = []; // array of { url: string, file?: File, isExisting: boolean }
 let viewGallery   = { images: [], activeIndex: 0, category: '' };
 let enquiries     = [];
+let reviews       = [];
+let deleteReviewId= null;
+
+/* ─── REVIEWS STORAGE & RENDERING ─── */
+async function loadReviews() {
+  if (supabaseClient) {
+    try {
+      const { data, error } = await supabaseClient
+        .from('reviews')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (!error && data && data.length > 0) {
+        reviews = data.map(r => ({
+          id: r.id,
+          name: r.name,
+          role: r.role,
+          rating: r.rating || 5,
+          projectTag: r.project_tag || r.projectTag || '',
+          comment: r.comment
+        }));
+        renderReviews();
+        return;
+      }
+    } catch (e) {
+      console.warn('Supabase fetch reviews failed, fallback to local', e);
+    }
+  }
+
+  try {
+    const raw = localStorage.getItem('pkb_reviews');
+    reviews = raw ? JSON.parse(raw) : DEFAULT_REVIEWS;
+  } catch { reviews = DEFAULT_REVIEWS; }
+  renderReviews();
+}
+
+function saveReviews() {
+  try { localStorage.setItem('pkb_reviews', JSON.stringify(reviews)); } catch {}
+
+  if (supabaseClient) {
+    reviews.forEach(async (r) => {
+      try {
+        await supabaseClient.from('reviews').upsert({
+          id: r.id,
+          name: r.name,
+          role: r.role,
+          rating: r.rating,
+          project_tag: r.projectTag || '',
+          comment: r.comment
+        });
+      } catch (e) {}
+    });
+  }
+}
+
+function renderReviews() {
+  const reviewsGrid = $('reviewsGrid');
+  const reviewsEmpty = $('reviewsEmpty');
+  const secAddReviewBtn = $('secAddReviewBtn');
+
+  if (secAddReviewBtn) {
+    secAddReviewBtn.style.display = isAdmin ? 'inline-flex' : 'none';
+  }
+
+  if (!reviewsGrid) return;
+
+  if (!reviews || reviews.length === 0) {
+    reviewsGrid.innerHTML = '';
+    if (reviewsEmpty) reviewsEmpty.style.display = 'block';
+    return;
+  }
+  if (reviewsEmpty) reviewsEmpty.style.display = 'none';
+
+  reviewsGrid.innerHTML = reviews.map(r => {
+    const ratingVal = Math.min(5, Math.max(1, parseInt(r.rating, 10) || 5));
+    const stars = '★'.repeat(ratingVal) + '☆'.repeat(5 - ratingVal);
+    const tagHTML = (r.projectTag || r.project_tag)
+      ? `<span class="rev-tag">${sanitizeHTML(r.projectTag || r.project_tag)}</span>`
+      : '';
+    const adminActionsHTML = isAdmin ? `
+      <div class="rev-admin-actions">
+        <button class="rev-btn-edit" onclick="openEditReviewModal('${r.id}')">✏️ Edit</button>
+        <button class="rev-btn-del" onclick="confirmDeleteReviewModal('${r.id}')">🗑️ Delete</button>
+      </div>
+    ` : '';
+
+    return `
+      <div class="review-card" id="card-${r.id}">
+        <div class="rev-header">
+          <div class="rev-stars" title="${ratingVal} out of 5 stars">${stars}</div>
+          ${tagHTML}
+        </div>
+        <p class="rev-comment">${sanitizeHTML(r.comment)}</p>
+        <div class="rev-footer">
+          <div class="rev-author">
+            <span class="rev-name">${sanitizeHTML(r.name)}</span>
+            <span class="rev-role">${sanitizeHTML(r.role)}</span>
+          </div>
+          ${adminActionsHTML}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
 
 /* ─── HELPER TO NORMALIZE PROJECT IMAGES ─── */
 function parseProjectImages(p) {
@@ -460,6 +592,26 @@ const vlRefreshBtn          = $('vlRefreshBtn');
 const vlExportBtn           = $('vlExportBtn');
 const vlClearBtn            = $('vlClearBtn');
 
+const addReviewBtn          = $('addReviewBtn');
+const secAddReviewBtn       = $('secAddReviewBtn');
+const reviewModal           = $('reviewModal');
+const closeReviewModal      = $('closeReviewModal');
+const cancelReviewModal     = $('cancelReviewModal');
+const reviewForm            = $('reviewForm');
+const rmTitle               = $('rmTitle');
+const editReviewId          = $('editReviewId');
+const rName                 = $('rName');
+const rRole                 = $('rRole');
+const rRating               = $('rRating');
+const rProjectTag           = $('rProjectTag');
+const rComment              = $('rComment');
+const rmError               = $('rmError');
+
+const deleteReviewModal     = $('deleteReviewModal');
+const dmReviewName          = $('dmReviewName');
+const cancelDeleteReview    = $('cancelDeleteReview');
+const confirmDeleteReview   = $('confirmDeleteReview');
+
 const projectsGrid    = $('projectsGrid');
 const projEmpty       = $('projEmpty');
 const contactForm     = $('contactForm');
@@ -471,12 +623,12 @@ const formSuccess     = $('formSuccess');
 function openModal(el)  { if (el) { el.classList.add('open'); document.body.classList.add('modal-open'); document.body.style.overflow = 'hidden'; } }
 function closeModal(el) { if (el) { el.classList.remove('open'); document.body.classList.remove('modal-open'); document.body.style.overflow = ''; } }
 
-[loginModal, projectModal, deleteModal, viewModal, enquiriesModal, statsModal, visitorLogsModal].forEach(m => {
+[loginModal, projectModal, deleteModal, viewModal, enquiriesModal, statsModal, visitorLogsModal, reviewModal, deleteReviewModal].forEach(m => {
   if (m) m.addEventListener('click', e => { if (e.target === m) closeModal(m); });
 });
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape')
-    [loginModal, projectModal, deleteModal, viewModal, enquiriesModal, statsModal, visitorLogsModal].forEach(m => { if (m) closeModal(m); });
+    [loginModal, projectModal, deleteModal, viewModal, enquiriesModal, statsModal, visitorLogsModal, reviewModal, deleteReviewModal].forEach(m => { if (m) closeModal(m); });
 });
 
 /* ════════════════════════════════════════
@@ -1398,6 +1550,7 @@ loginForm.addEventListener('submit', async e => {
       document.body.classList.add('admin-mode');
       adminTrigger.classList.add('active');
       renderProjects();
+      renderReviews();
       toast('✅ Welcome back, K. Prasath!');
     } else {
       LoginLockoutManager.recordFailedAttempt();
@@ -1427,9 +1580,132 @@ function logoutAdmin() {
   document.body.classList.remove('admin-mode');
   adminTrigger.classList.remove('active');
   renderProjects();
+  renderReviews();
   toast('Logged out of admin.');
 }
 adminLogout.addEventListener('click', logoutAdmin);
+
+/* ════════════════════════════════════════
+   REVIEWS ADMIN ACTIONS
+════════════════════════════════════════ */
+function openAddReviewModal() {
+  if (!isAdmin) {
+    toast('🔒 Admin access required to add reviews.');
+    return;
+  }
+  rmTitle.textContent = 'Add Client Review';
+  editReviewId.value = '';
+  rName.value = '';
+  rRole.value = '';
+  rRating.value = '5';
+  rProjectTag.value = '';
+  rComment.value = '';
+  if (rmError) { rmError.textContent = ''; rmError.style.display = 'none'; }
+  openModal(reviewModal);
+}
+
+function openEditReviewModal(id) {
+  if (!isAdmin) {
+    toast('🔒 Admin access required to edit reviews.');
+    return;
+  }
+  const rev = reviews.find(r => r.id === id);
+  if (!rev) return;
+
+  rmTitle.textContent = 'Edit Client Review';
+  editReviewId.value = rev.id;
+  rName.value = rev.name || '';
+  rRole.value = rev.role || '';
+  rRating.value = rev.rating || 5;
+  rProjectTag.value = rev.projectTag || rev.project_tag || '';
+  rComment.value = rev.comment || '';
+  if (rmError) { rmError.textContent = ''; rmError.style.display = 'none'; }
+  openModal(reviewModal);
+}
+
+function confirmDeleteReviewModal(id) {
+  if (!isAdmin) {
+    toast('🔒 Admin access required to delete reviews.');
+    return;
+  }
+  const rev = reviews.find(r => r.id === id);
+  if (!rev) return;
+  deleteReviewId = id;
+  if (dmReviewName) dmReviewName.textContent = rev.name ? `"${rev.name}"` : 'Selected review';
+  openModal(deleteReviewModal);
+}
+
+window.openEditReviewModal = openEditReviewModal;
+window.confirmDeleteReviewModal = confirmDeleteReviewModal;
+
+if (addReviewBtn) addReviewBtn.addEventListener('click', openAddReviewModal);
+if (secAddReviewBtn) secAddReviewBtn.addEventListener('click', openAddReviewModal);
+if (closeReviewModal) closeReviewModal.addEventListener('click', () => closeModal(reviewModal));
+if (cancelReviewModal) cancelReviewModal.addEventListener('click', () => closeModal(reviewModal));
+
+if (reviewForm) {
+  reviewForm.addEventListener('submit', e => {
+    e.preventDefault();
+    const nameVal = rName.value.trim();
+    const roleVal = rRole.value.trim();
+    const ratingVal = parseInt(rRating.value, 10) || 5;
+    const projectTagVal = rProjectTag.value.trim();
+    const commentVal = rComment.value.trim();
+
+    if (!nameVal || !roleVal || !commentVal) {
+      if (rmError) {
+        rmError.textContent = 'Please fill in all required fields (*).';
+        rmError.style.display = 'block';
+      }
+      return;
+    }
+
+    const idVal = editReviewId.value;
+    if (idVal) {
+      const idx = reviews.findIndex(r => r.id === idVal);
+      if (idx !== -1) {
+        reviews[idx] = {
+          id: idVal,
+          name: nameVal,
+          role: roleVal,
+          rating: ratingVal,
+          projectTag: projectTagVal,
+          comment: commentVal
+        };
+        toast('Review updated successfully!');
+      }
+    } else {
+      const newReview = {
+        id: 'rev-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
+        name: nameVal,
+        role: roleVal,
+        rating: ratingVal,
+        projectTag: projectTagVal,
+        comment: commentVal
+      };
+      reviews.unshift(newReview);
+      toast('New review added successfully!');
+    }
+
+    saveReviews();
+    renderReviews();
+    closeModal(reviewModal);
+  });
+}
+
+if (cancelDeleteReview) cancelDeleteReview.addEventListener('click', () => closeModal(deleteReviewModal));
+if (confirmDeleteReview) {
+  confirmDeleteReview.addEventListener('click', () => {
+    if (deleteReviewId) {
+      reviews = reviews.filter(r => r.id !== deleteReviewId);
+      saveReviews();
+      renderReviews();
+      toast('Review deleted.');
+      deleteReviewId = null;
+    }
+    closeModal(deleteReviewModal);
+  });
+}
 
 /* ════════════════════════════════════════
    RENDER PROJECTS
@@ -2311,8 +2587,10 @@ function toast(msg) {
    INIT
 ════════════════════════════════════════ */
 loadProjects();
+loadReviews();
 loadEnquiries();
 loadStats();
 recordVisitorLog();
 renderProjects();
+renderReviews();
 updateNav();

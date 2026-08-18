@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co https://images.unsplash.com; connect-src 'self' https://*.supabase.co https://api.ipify.org https://ipapi.co https://api.db-ip.com https://ip-api.com https://*.ipify.org; frame-ancestors 'none';" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co https://images.unsplash.com; connect-src 'self' ws: wss: http://localhost:* ws://localhost:* http://127.0.0.1:* ws://127.0.0.1:* https://*.supabase.co https://api.ipify.org https://ipapi.co https://api.db-ip.com https://ip-api.com https://*.ipify.org; frame-ancestors 'none';" />
   <meta http-equiv="X-Content-Type-Options" content="nosniff" />
   <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
   <title>PKB Kalai Construction | Building Better Homes For Better Tomorrow</title>
@@ -123,6 +123,7 @@
         <button class="ab-btn ab-stats" id="adminEditStatsBtn">📊 Edit Stats</button>
         <button class="ab-btn ab-visitors" id="adminVisitorLogsBtn">🌐 Server Logs (<span id="abVisitorsCount">0</span>)</button>
         <button class="ab-btn" id="addProjectBtn">+ Add Project</button>
+        <button class="ab-btn" id="addReviewBtn">+ Add Review</button>
         <button class="ab-btn ab-out" id="adminLogout">Sign Out</button>
       </div>
     </div>
@@ -142,6 +143,7 @@
         <li><a href="#sectors"  class="nav-link">Sectors</a></li>
         <li><a href="#services" class="nav-link">Services</a></li>
         <li><a href="#projects" class="nav-link">Projects</a></li>
+        <li><a href="#reviews"  class="nav-link">Reviews</a></li>
         <li><a href="#contact"  class="nav-link">Contact</a></li>
       </ul>
       <div class="nav-right">
@@ -662,6 +664,31 @@
     </div>
   </section>
 
+  <!-- ═══════════════════════════════════════
+       CLIENT REVIEWS / TESTIMONIALS
+  ════════════════════════════════════════ -->
+  <section class="reviews" id="reviews">
+    <div class="container">
+      <div class="reviews-section-header">
+        <div class="rsh-left">
+          <p class="section-label">Client Feedback</p>
+          <h2 class="reviews-headline">Client <em>Reviews</em></h2>
+        </div>
+        <div class="rsh-right">
+          <button class="btn-solid admin-only-btn" id="secAddReviewBtn" style="display:none;">+ Add Client Review</button>
+        </div>
+      </div>
+
+      <div class="reviews-grid" id="reviewsGrid"></div>
+
+      <div class="reviews-empty" id="reviewsEmpty" style="display:none;">
+        <span class="re-icon">💬</span>
+        <h3>No Reviews Yet</h3>
+        <p>Login as admin to add client reviews.</p>
+      </div>
+    </div>
+  </section>
+
 
 
   <!-- ═══════════════════════════════════════
@@ -912,6 +939,73 @@
           <button type="submit" class="btn-solid" id="saveProjectBtn">Save Project</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       MODAL: ADD / EDIT REVIEW
+  ════════════════════════════════════════ -->
+  <div class="modal-overlay" id="reviewModal">
+    <div class="modal-box project-box">
+      <button class="modal-x" id="closeReviewModal">✕</button>
+      <h2 class="pm-title" id="rmTitle">Add Client Review</h2>
+
+      <form id="reviewForm" novalidate>
+        <input type="hidden" id="editReviewId" />
+        <div class="form-row">
+          <div class="form-group">
+            <label for="rName">Client Name *</label>
+            <input type="text" id="rName" placeholder="e.g. Mr. S. Rajesh" required />
+          </div>
+          <div class="form-group">
+            <label for="rRole">Role / Location *</label>
+            <input type="text" id="rRole" placeholder="e.g. Homeowner, Chennai" required />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="rRating">Star Rating *</label>
+            <select id="rRating" required>
+              <option value="5">★★★★★ (5 / 5 Stars)</option>
+              <option value="4">★★★★☆ (4 / 5 Stars)</option>
+              <option value="3">★★★☆☆ (3 / 5 Stars)</option>
+              <option value="2">★★☆☆☆ (2 / 5 Stars)</option>
+              <option value="1">★☆☆☆☆ (1 / 5 Stars)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="rProjectTag">Project Type / Tag</label>
+            <input type="text" id="rProjectTag" placeholder="e.g. 3BHK Residential Villa" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="rComment">Review Text *</label>
+          <textarea id="rComment" rows="4" placeholder="Write client review comment..." required></textarea>
+        </div>
+
+        <p class="pm-form-error" id="rmError"></p>
+
+        <div class="pm-actions">
+          <button type="button" class="btn-ghost-dark" id="cancelReviewModal">Cancel</button>
+          <button type="submit" class="btn-solid" id="saveReviewBtn">Save Review</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       MODAL: DELETE CONFIRM REVIEW
+  ════════════════════════════════════════ -->
+  <div class="modal-overlay" id="deleteReviewModal">
+    <div class="modal-box delete-box">
+      <div class="dm-icon">🗑️</div>
+      <h3>Delete Review?</h3>
+      <p>This cannot be undone.</p>
+      <div class="dm-name" id="dmReviewName"></div>
+      <div class="dm-actions">
+        <button class="btn-ghost-dark" id="cancelDeleteReview">Cancel</button>
+        <button class="btn-danger" id="confirmDeleteReview">Yes, Delete</button>
+      </div>
     </div>
   </div>
 
