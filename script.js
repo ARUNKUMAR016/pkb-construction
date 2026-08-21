@@ -312,6 +312,10 @@ let reviews       = [];
 let deleteReviewId= null;
 
 /* ─── REVIEWS STORAGE & RENDERING ─── */
+function saveReviewsLocal() {
+  try { localStorage.setItem('pkb_reviews', JSON.stringify(reviews)); } catch {}
+}
+
 async function loadReviews() {
   if (supabaseClient) {
     try {
@@ -320,17 +324,34 @@ async function loadReviews() {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (!error && data && data.length > 0) {
-        reviews = data.map(r => ({
-          id: r.id,
-          name: r.name,
-          role: r.role,
-          rating: r.rating || 5,
-          projectTag: r.project_tag || r.projectTag || '',
-          comment: r.comment
-        }));
+      if (!error && data) {
+        if (data.length > 0) {
+          reviews = data.map(r => ({
+            id: r.id,
+            name: r.name,
+            role: r.role,
+            rating: r.rating || 5,
+            projectTag: r.project_tag || r.projectTag || '',
+            comment: r.comment
+          }));
+        } else {
+          reviews = DEFAULT_REVIEWS;
+          for (const r of DEFAULT_REVIEWS) {
+            await supabaseClient.from('reviews').upsert([{
+              id: r.id,
+              name: r.name,
+              role: r.role,
+              rating: r.rating,
+              project_tag: r.projectTag || '',
+              comment: r.comment
+            }]).catch(() => {});
+          }
+        }
+        saveReviewsLocal();
         renderReviews();
         return;
+      } else if (error) {
+        console.warn('Supabase fetch reviews error:', error.message);
       }
     } catch (e) {
       console.warn('Supabase fetch reviews failed, fallback to local', e);
@@ -345,22 +366,7 @@ async function loadReviews() {
 }
 
 function saveReviews() {
-  try { localStorage.setItem('pkb_reviews', JSON.stringify(reviews)); } catch {}
-
-  if (supabaseClient) {
-    reviews.forEach(async (r) => {
-      try {
-        await supabaseClient.from('reviews').upsert({
-          id: r.id,
-          name: r.name,
-          role: r.role,
-          rating: r.rating,
-          project_tag: r.projectTag || '',
-          comment: r.comment
-        });
-      } catch (e) {}
-    });
-  }
+  saveReviewsLocal();
 }
 
 function renderReviews() {
@@ -1644,7 +1650,7 @@ if (closeReviewModal) closeReviewModal.addEventListener('click', () => closeModa
 if (cancelReviewModal) cancelReviewModal.addEventListener('click', () => closeModal(reviewModal));
 
 if (reviewForm) {
-  reviewForm.addEventListener('submit', e => {
+  reviewForm.addEventListener('submit', async e => {
     e.preventDefault();
     const nameVal = rName.value.trim();
     const roleVal = rRole.value.trim();
@@ -1660,48 +1666,98 @@ if (reviewForm) {
       return;
     }
 
+    const saveBtn = $('saveReviewBtn');
+    if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Saving...'; }
+
     const idVal = editReviewId.value;
+    const newId = idVal || ('rev-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6));
+
+    const reviewPayload = {
+      id: newId,
+      name: nameVal,
+      role: roleVal,
+      rating: ratingVal,
+      projectTag: projectTagVal,
+      comment: commentVal
+    };
+
+    if (supabaseClient) {
+      try {
+        const { error } = await supabaseClient.from('reviews').upsert([{
+          id: reviewPayload.id,
+          name: reviewPayload.name,
+          role: reviewPayload.role,
+          rating: reviewPayload.rating,
+          project_tag: reviewPayload.projectTag || '',
+          comment: reviewPayload.comment
+        }]);
+
+        if (error) {
+          console.error('Supabase review save error:', error);
+          if (rmError) {
+            rmError.textContent = `⚠️ Database save failed: ${error.message || 'Could not save review'}`;
+            rmError.style.display = 'block';
+          }
+          if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Save Review'; }
+          return;
+        }
+      } catch (err) {
+        console.error('Supabase exception:', err);
+        if (rmError) {
+          rmError.textContent = `⚠️ Save failed: ${err.message || 'Network error'}`;
+          rmError.style.display = 'block';
+        }
+        if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Save Review'; }
+        return;
+      }
+    }
+
     if (idVal) {
       const idx = reviews.findIndex(r => r.id === idVal);
-      if (idx !== -1) {
-        reviews[idx] = {
-          id: idVal,
-          name: nameVal,
-          role: roleVal,
-          rating: ratingVal,
-          projectTag: projectTagVal,
-          comment: commentVal
-        };
-        toast('Review updated successfully!');
-      }
+      if (idx !== -1) reviews[idx] = reviewPayload;
+      toast('Review updated successfully!');
     } else {
-      const newReview = {
-        id: 'rev-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
-        name: nameVal,
-        role: roleVal,
-        rating: ratingVal,
-        projectTag: projectTagVal,
-        comment: commentVal
-      };
-      reviews.unshift(newReview);
+      reviews.unshift(reviewPayload);
       toast('New review added successfully!');
     }
 
-    saveReviews();
+    saveReviewsLocal();
     renderReviews();
+    if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Save Review'; }
     closeModal(reviewModal);
   });
 }
 
 if (cancelDeleteReview) cancelDeleteReview.addEventListener('click', () => closeModal(deleteReviewModal));
 if (confirmDeleteReview) {
-  confirmDeleteReview.addEventListener('click', () => {
+  confirmDeleteReview.addEventListener('click', async () => {
     if (deleteReviewId) {
+      confirmDeleteReview.disabled = true;
+      confirmDeleteReview.textContent = 'Deleting...';
+
+      if (supabaseClient) {
+        try {
+          const { error } = await supabaseClient.from('reviews').delete().eq('id', deleteReviewId);
+          if (error) {
+            console.error('Supabase review delete error:', error);
+            toast('⚠️ Failed to delete from database: ' + error.message);
+            confirmDeleteReview.disabled = false;
+            confirmDeleteReview.textContent = 'Yes, Delete';
+            closeModal(deleteReviewModal);
+            return;
+          }
+        } catch (err) {
+          console.error('Delete review exception:', err);
+        }
+      }
+
       reviews = reviews.filter(r => r.id !== deleteReviewId);
-      saveReviews();
+      saveReviewsLocal();
       renderReviews();
       toast('Review deleted.');
       deleteReviewId = null;
+      confirmDeleteReview.disabled = false;
+      confirmDeleteReview.textContent = 'Yes, Delete';
     }
     closeModal(deleteReviewModal);
   });
