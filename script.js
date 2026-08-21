@@ -488,17 +488,81 @@ async function loadProjects() {
   renderProjects();
 }
 
+/**
+ * Automatically resizes and compresses an image File in the browser
+ * down to HD WebP format (~150KB - 250KB) before uploading to Supabase.
+ */
+async function compressImage(file, maxWidth = 1920, maxHeight = 1920, quality = 0.8) {
+  if (!file || !file.type || !file.type.startsWith('image/') || file.type === 'image/svg+xml' || file.type === 'image/gif') {
+    return file;
+  }
+
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxWidth || height > maxHeight) {
+          if (width / height > maxWidth / maxHeight) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          } else {
+            width = Math.round((width * maxHeight) / height);
+            height = maxHeight;
+          }
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const outputType = 'image/webp';
+        canvas.toBlob(
+          (blob) => {
+            if (!blob || blob.size >= file.size) {
+              resolve(file);
+              return;
+            }
+            const baseName = file.name ? file.name.substring(0, file.name.lastIndexOf('.')) || 'image' : 'image';
+            const compressedFile = new File([blob], `${baseName}.webp`, {
+              type: outputType,
+              lastModified: Date.now()
+            });
+            console.log(`Image compressed: ${(file.size / 1024 / 1024).toFixed(2)} MB -> ${(compressedFile.size / 1024).toFixed(1)} KB`);
+            resolve(compressedFile);
+          },
+          outputType,
+          quality
+        );
+      };
+      img.onerror = () => resolve(file);
+      img.src = e.target.result;
+    };
+    reader.onerror = () => resolve(file);
+    reader.readAsDataURL(file);
+  });
+}
+
 async function uploadImageToSupabase(file) {
   if (!supabaseClient) return null;
   try {
-    const rawExt = file.name ? file.name.split('.').pop() : 'jpg';
-    const ext = rawExt ? rawExt.toLowerCase() : 'jpg';
+    // Automatically compress heavy camera photos (e.g. 3MB -> ~150KB) in browser before upload
+    const fileToUpload = await compressImage(file, 1920, 1920, 0.8);
+
+    const rawExt = fileToUpload.name ? fileToUpload.name.split('.').pop() : 'webp';
+    const ext = rawExt ? rawExt.toLowerCase() : 'webp';
     const fileName = `${Date.now()}_${Math.random().toString(36).slice(2, 7)}.${ext}`;
-    const contentType = file.type || (ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg');
+    const contentType = fileToUpload.type || (ext === 'webp' ? 'image/webp' : 'image/jpeg');
 
     const { error } = await supabaseClient.storage
       .from('project-images')
-      .upload(fileName, file, { cacheControl: '3600', upsert: true, contentType });
+      .upload(fileName, fileToUpload, { cacheControl: '31536000', upsert: true, contentType });
 
     if (error) {
       console.error('Storage upload error:', error);
@@ -2655,4 +2719,15 @@ if ('requestIdleCallback' in window) {
   requestIdleCallback(() => recordVisitorLog());
 } else {
   setTimeout(() => recordVisitorLog(), 2000);
+}
+
+// Register Service Worker for offline PWA support & instant caching
+if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').then((reg) => {
+      console.log('[ServiceWorker] Registered successfully with scope:', reg.scope);
+    }).catch((err) => {
+      console.warn('[ServiceWorker] Registration failed:', err);
+    });
+  });
 }
