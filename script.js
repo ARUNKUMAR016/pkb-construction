@@ -2646,7 +2646,13 @@ loadProjects();
 loadReviews();
 loadEnquiries();
 loadStats();
-recordVisitorLog();
 renderProjects();
 renderReviews();
 updateNav();
+
+// Defer non-critical visitor log recording so it never delays page startup
+if ('requestIdleCallback' in window) {
+  requestIdleCallback(() => recordVisitorLog());
+} else {
+  setTimeout(() => recordVisitorLog(), 2000);
+}
